@@ -1,0 +1,35 @@
+{
+  "source": "runs/smoke-masked-001/status.json",
+  "status_sha256": "5aa48d1c7d0c836e392256b60203f0a5036bedb634a06e050e3515b0e3687033",
+  "summary_validation": "passed",
+  "checks": {
+    "complete_terminated_not_truncated": true,
+    "masked_inference_only": true,
+    "summary_only": true,
+    "action_count_sum": true,
+    "mask_count_sum": true,
+    "finite_ordered_1519d_bounds": true,
+    "bounds_within_contract": true,
+    "finite_reward": true,
+    "alp_disk_hash_matches_run": true,
+    "protocol_matches_current": true
+  },
+  "transitions": 189,
+  "action_counts": [
+    31,
+    57,
+    56,
+    45
+  ],
+  "decision_mask_counts": {
+    "1111": 189
+  },
+  "total_reward": -5.03306810846298,
+  "scope": "Summary consistency plus contracts enforced by running smoke/bridge; no transition replay because detailed recording was disabled",
+  "remaining_unverified": [
+    "Real unavailable/depleted load-site masks: all observed decision masks were 1111",
+    "Detailed action/reward replay unavailable by design",
+    "PPO optimizer/model-save behavior on actual AnyLogic data has not been run"
+  ],
+  "protected_core_sha256": "8e4cfa31c622f5e33756e304eea3f7526547db72ae93f7d9f00808845d61ef96"
+}

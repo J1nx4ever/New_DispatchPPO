@@ -1,0 +1,609 @@
+{
+  "source": "anylogic/DRL-PPO.alp",
+  "code": {
+    "Main.init1": "// ---------- 初始化 LoadSite population ----------\n\ndynamic = true;\n\nLoadSite s0 = add_loadSites();\ns0.setLocation(ShovelOreHigh1);\ns0.loadNode = ShovelOreHigh1;\ns0.initLoadSite(0, \"HG1\", true, 0.38, 30000, 0.45,\n    ShovelOreHigh1.getX(), ShovelOreHigh1.getY(), 13.5, 2.2);\n\n\nLoadSite s1 = add_loadSites();\ns1.setLocation(ShovelOreHigh2);\ns1.loadNode = ShovelOreHigh2;\ns1.initLoadSite(1, \"HG2\", true, 0.30, 30000, 0.45,\n    ShovelOreHigh2.getX(), ShovelOreHigh2.getY(), 13.5, 2.2);\n\n\nLoadSite s2 = add_loadSites();\ns2.setLocation(ShovelOreLow);\ns2.loadNode = ShovelOreLow;\ns2.initLoadSite(2, \"LG\", true, 0.15, 30000, 0.45,\n    ShovelOreLow.getX(), ShovelOreLow.getY(), 13.5, 2.2);\n\nLoadSite s3 = add_loadSites();\ns3.setLocation(ShovelWaste);\ns3.loadNode = ShovelWaste;\ns3.initLoadSite(3, \"WASTE\", false, 0.00, 30000, 0.45,\n    ShovelWaste.getX(), ShovelWaste.getY(), 15.0, 2.0);\n\nfor(LoadSite s: loadSites){\n\n    layoutEntities.add(\n        new LayoutEntity(\n            s.siteName,\n            \"LOAD_SITE\",\n            s.getX(),\n            s.getY()\n        )\n    );\n\n}\n\n// ---------- 初始化 DumpSite population ----------\n\nDumpSite d0 = add_dumpSites();\nd0.setLocation(Crusher);\nd0.dumpNode = Crusher;\nd0.initDumpSite(0, \"Crusher\", true, false, 2.5);\n\nDumpSite d1 = add_dumpSites();\nd1.setLocation(dumpNode);\nd1.dumpNode = dumpNode;\nd1.initDumpSite(1, \"Dump\", false, true, 2.0);\n\n\nfor(DumpSite d: dumpSites){\n\n    layoutEntities.add(\n        new LayoutEntity(\n            d.siteName,\n            \"DUMP_SITE\",\n            d.getX(),\n            d.getY()\n        )\n    );\n\n}\n\n// ---------- 初始化 Truck population ----------\n\n//init_trucks(numTrucks);\nfor(int i = 0; i < numTrucks; i++){\n\n    Truck t = add_trucks();\n    if(i < 3){\n    \tt.setLocation(collectionTrucks.get(i+25));\n    \tt.currentNode = \"dumpNode\";\n    \tt.startPoint = t.currentNode;\n    }\n    else{\t\n        t.setLocation(collectionTrucks.get(i+15));\n        t.currentNode = \"Crusher\";\n        t.startPoint = t.currentNode;\n     }\n     /*if(i > 19){\n     \tt.setLocation(dumpNode);\n \t    t.currentNode = \"dumpNode\";\n    \tt.startPoint = t.currentNode;\n     }*/\n    \n\n    if (dynamic == false){\n    \tt.targetShovel = getLoadSiteById(0);\n    }\n\t/*\n\tt.setLocation(collectionTrucks.get(i+15));\n\tt.currentNode = \"Crusher\";\n\tt.startPoint = t.currentNode;\n\t*/\n    \n    int k = i / 3;\n\tdouble cap =\n\t    k == 0 ? 91.7 :\n\t    k == 1 ? 147.0 : 193.0;\n\n\tt.initTruck(i, cap);\n    t.truckType = k;\n\tt.initialPredecessor = null;\n\tt.initialDispatchDone = false;\n\tt.setSpeed(k == 0 ? 26.0 : k == 1 ? 24.0 : 22.0, KPH);\n\tfor (Truck previous : trucks) {\n\t    if (previous != t && previous.truckId < t.truckId\n\t        && previous.currentNode.equals(t.currentNode)\n\t        && (t.initialPredecessor == null\n\t            || previous.truckId > t.initialPredecessor.truckId)) {\n\t        t.initialPredecessor = previous;\n\t    }\n\t}\n\n}\n// ---------- 初始化 Stats population ----------\n\nfor(int i = 0; i < 4 ; i++ ){\n\tloadingPointStatsList.get(i).loadingPointName = collectionLoadSites.get(i).getName();\n}\n\n\n\n\n\n// ---------- 初始化全局统计 ----------\ncrusherOreTons = 0;\ncrusherMetalTons = 0;\ncurrentFeedGrade = 0;\ngradeGap = targetGrade - currentFeedGrade;\n\ntotalProduction = 0;\ntotalWasteMoved = 0;\ntotalWaitTime = 0;\ntotalTravelTime = 0;\ntotalCycleTime = 0;\ncompletedTrips = 0;\n\nL2DList = L2D();\n\n\n\n",
+    "Main.selectNextLoadSite": "obsCheckDecision(t);\nboolean any = false;\nfor (LoadSite s : loadSites) {\n    if (s.getAvailableTons() > 1e-6) {\n        any = true;\n        break;\n    }\n}\nif (!any) return -1;\nint selected;\nswitch (currentDispatchPolicy) {\n    case 0: selected = selectNextLoadSiteRandom(t); break;\n    case 1: selected = selectNextLoadSiteSQ(t); break;\n    case 2: selected = selectNextLoadSiteGradeAware(t); break;\n    case 3: selected = selectNextLoadSiteAI(t); break;\n    default: throw new IllegalStateException(\"Unknown policy: \" + currentDispatchPolicy);\n}\nLoadSite s = selected < 0 ? null : getLoadSiteById(selected);\nif (s == null || s.getAvailableTons() <= 1e-6) {\n    throw new IllegalStateException(\"Dispatch selected unavailable material: \" + selected);\n}\nreturn selected;",
+    "Main.buildObservation": "if (usePhysicalObservation) return buildPhysicalObservation(t);\nif (t == null) {\n    throw new IllegalArgumentException(\"truck is required\");\n}\n\ndouble fleet = trucks.size();\nif (fleet <= 0 || targetOreTons2h <= 0 || targetOreTonsShift <= 0) {\n    throw new IllegalStateException(\"Invalid observation denominator\");\n}\n\ngetDumpSiteById(0).advanceCrusherTo(time(SECOND));\nadvanceCompletedGradeWindows(time(SECOND));\n\ndouble nowSec = Math.min(time(SECOND), rlShiftSeconds);\n\ndouble grade2h =\n    windowOreTons > 0\n    ? windowMetalTons / windowOreTons\n    : 0.0;\n\ndouble gradeGap2hNorm =\n    windowOreTons > 0\n    ? clip((targetGrade - grade2h) / 0.15, -1.0, 1.0)\n    : 0.0;\n\ndouble gradeGapShiftNorm =\n    crusherOreTons > 0\n    ? clip((targetGrade - currentFeedGrade) / 0.15, -1.0, 1.0)\n    : 0.0;\n\ndouble windowStartSec =\n    Math.min(currentWindowIndex, 3) * rlWindowSeconds;\n\ndouble[] x = new double[31];\n\nx[0] = gradeGap2hNorm;\nx[1] = clip(windowOreTons / targetOreTons2h, 0.0, 1.0);\nx[2] = clip(\n    (nowSec - windowStartSec) / rlWindowSeconds,\n    0.0,\n    1.0\n);\n\nx[3] = gradeGapShiftNorm;\nx[4] = clip(crusherOreTons / targetOreTonsShift, 0.0, 1.0);\nx[5] = clip(nowSec / rlShiftSeconds, 0.0, 1.0);\n\n// 必须按 siteId 0/1/2/3，而不是 population 当前遍历顺序\nfor (int siteId = 0; siteId < 4; siteId++) {\n    LoadSite s = getLoadSiteById(siteId);\n    if (s == null) {\n        throw new IllegalStateException(\n            \"Missing LoadSite siteId=\" + siteId\n        );\n    }\n\n    int base = 6 + siteId * 3;\n    x[base]     = clip(s.getQueueSize() / fleet, 0.0, 1.0);\n    x[base + 1] = clip(s.incomingTrucks / fleet, 0.0, 1.0);\n    x[base + 2] = s.getUtilization();\n}\n\nint crusherIncoming = 0;\nint dumpIncoming = 0;\n\nfor (Truck other : trucks) {\n    if (other.isLoaded && \"TO_DUMP\".equals(other.executionPhase)) {\n        if (other.targetDumpSiteId == 0) crusherIncoming++;\n        if (other.targetDumpSiteId == 1) dumpIncoming++;\n    }\n}\n\nDumpSite crusher = getDumpSiteById(0);\nDumpSite dump = getDumpSiteById(1);\n\nx[18] = clip(crusher.getQueueSize() / fleet, 0.0, 1.0);\nx[19] = clip(crusherIncoming / fleet, 0.0, 1.0);\nx[20] = crusher.getUtilization();\n\nx[21] = clip(dump.getQueueSize() / fleet, 0.0, 1.0);\nx[22] = clip(dumpIncoming / fleet, 0.0, 1.0);\nx[23] = dump.getUtilization();\n\n// origin_initial, origin_crusher, origin_dump\nx[24] = t.currentDumpSiteId < 0 ? 1.0 : 0.0;\nx[25] = t.currentDumpSiteId == 0 ? 1.0 : 0.0;\nx[26] = t.currentDumpSiteId == 1 ? 1.0 : 0.0;\n\n// 装载点品位：严格按 siteId 0、1、2、3 排列。\n// 与模型中的 grade 使用相同单位，例如 0.25，不能填成 25。\nfor (int siteId = 0; siteId < 4; siteId++) {\n    LoadSite site = getLoadSiteById(siteId);\n\n    if (site == null) {\n        throw new IllegalStateException(\n            \"Missing LoadSite siteId=\" + siteId\n        );\n    }\n\n    double siteGrade = site.grade;\n\n    if (!Double.isFinite(siteGrade)\n        || siteGrade < 0.0\n        || siteGrade > 1.0) {\n        throw new IllegalStateException(\n            \"Invalid grade: siteId=\" + siteId\n            + \", grade=\" + siteGrade\n        );\n    }\n\n    x[27 + siteId] = siteGrade;\n}\nObservation.Builder builder = Observation.newBuilder()\n    .setSchemaId(\"dispatch.v2-31\");\n\nfor (int i = 0; i < x.length; i++) {\n    if (!Double.isFinite(x[i])) {\n        throw new IllegalStateException(\n            \"Non-finite observation[\" + i + \"]=\" + x[i]\n        );\n    }\n    builder.addValues((float) x[i]);\n}\n\nreturn builder.build();",
+    "Main.selectNextLoadSiteAI": "if (\n    !enableOnnxDispatch\n    || rlClient == null\n    || !rlClient.isReady()\n) {\n    throw new IllegalStateException(\n        \"Dispatch training client is unavailable\"\n    );\n}\n\nObservation obs = buildObservation(t);\ndouble nowSec = time(SECOND);\n\nboolean isStart = !episodeStarted;\n\ndouble deltaWaitVehicleSeconds = 0.0;\ndouble waitReward = 0.0;\ndouble simDeltaSeconds = 0.0;\n\nif (!isStart) {\n    double cumulativeWait = getCumulativeWaitVehicleSeconds();\n\n    deltaWaitVehicleSeconds = Math.max(\n        0.0,\n        cumulativeWait - lastWaitVehicleSeconds\n    );\n\n    double meanWaitPerTruck =\n        deltaWaitVehicleSeconds / Math.max(1, trucks.size());\n\n\twaitReward = -wWait * clip(\n\t    meanWaitPerTruck / waitRefSeconds,\n\t    0.0,\n\t    1.0\n\t);\n\n    simDeltaSeconds = Math.max(0.0, nowSec - lastDecisionTimeSec);\n}\n\ndouble transitionReward =\n    isStart\n    ? 0.0\n    : waitReward\n        + pendingGradeActionReward\n        + pendingGrade2hReward\n        + pendingGradeShiftReward\n        + pendingProductionReward;\n\nlong seq = decisionSequence++;\nString requestId = episodeId + \"-\" + seq;\n\nDispatchRequest request = DispatchRequest.newBuilder()\n    .setTruckId(t.truckId)\n    .setObs(obs)\n    .setEpisodeId(episodeId)\n    .setDecisionSequence(seq)\n    .setRequestId(requestId)\n    .setKind(\n        isStart\n        ? DispatchKind.EPISODE_START\n        : DispatchKind.DECISION\n    )\n    .setActionRequired(true)\n    .setPreviousAction(isStart ? -1 : previousAction)\n    .setTransitionReward(transitionReward)\n    .putRewardComponents(\"wait\", isStart ? 0.0 : waitReward)\n    .putRewardComponents(\"grade_2h\", pendingGrade2hReward)\n    .putRewardComponents(\"grade_shift\", pendingGradeShiftReward)\n    .putRewardComponents(\"production\", pendingProductionReward)\n    .putRewardComponents(\n        \"delta_wait_vehicle_seconds\",\n        deltaWaitVehicleSeconds\n    )\n    .putRewardComponents(\n\t    \"grade_action\",\n\t    isStart ? 0.0 : pendingGradeActionReward\n\t)\n    .setSimTimeSeconds(nowSec)\n    .setSimTimeDeltaSeconds(simDeltaSeconds)\n    .setTerminated(false)\n    .setTruncated(false)\n    .addAllClosedWindows(pendingClosedWindows)\n\t.setExperimentRunIndex(experimentRunIndex)\n\t.setExperimentSeed(experimentSeed)\n\t.setRewardContractId(rewardContractId)\n    .build();\n\nDispatchResponse response = rlClient.getDispatchResult(request);\n\nif (!response.getHasAction()) {\n    throw new IllegalStateException(\n        \"Dispatch response has_action=false for action request\"\n    );\n}\n\nint action = response.getAction();\nif (action < 0 || action > 3 || getLoadSiteById(action) == null) {\n    throw new IllegalStateException(\"Invalid dispatch action: \" + action);\n}\ndouble nextGradeActionReward =\n    calculateGradeActionReward(t, action);\nif (getLoadSiteById(action).getAvailableTons() <= 1e-6) {\n    throw new IllegalStateException(\"Policy selected a masked-out load site: \" + action);\n}\n// 只有 RPC 成功后才消费 reward，避免异常时丢失\npendingClosedWindows.clear();\nepisodeStarted = true;\npreviousAction = action;\nlastDispatchObservation = obs;\nlastWaitVehicleSeconds = getCumulativeWaitVehicleSeconds();\nlastDecisionTimeSec = nowSec;\n\n// 当前request已经成功发送，消费上一transition的奖励\npendingGradeActionReward = 0.0;\npendingGrade2hReward = 0.0;\npendingGradeShiftReward = 0.0;\npendingProductionReward = 0.0;\n\n// 当前action的品位奖励属于 action -> next state，\n// 留到下一次DECISION或EPISODE_END返回\npendingGradeActionReward = nextGradeActionReward;\n\nreturn action;",
+    "Main.init_network": "segmentMap.clear();\naddBidirectionalPath(\"Crusher\", \"intersection1\", 30.0 / 3.6);\naddBidirectionalPath(\"intersection1\", \"intersection2\", 30.0 / 3.6);\naddBidirectionalPath(\"intersection2\", \"intersection3\", 30.0 / 3.6);\naddBidirectionalPath(\"intersection3\", \"ShovelOreHigh2\", 25.0 / 3.6);\naddBidirectionalPath(\"intersection2\", \"ShovelOreHigh1\", 25.0 / 3.6);\naddBidirectionalPath(\"intersection3\", \"ShovelOreLow\", 25.0 / 3.6);\naddBidirectionalPath(\"intersection2\", \"ShovelWaste\", 25.0 / 3.6);\naddBidirectionalPath(\"dumpNode\", \"intersection2\", 25.0 / 3.6);",
+    "Main.addBidirectionalPath": "// 正向：卸载点 / crusher / dump → loadSite\nPathSegment forwardSeg = new PathSegment(\n    this,\n    positiveFrom,\n    positiveTo,\n    positiveFrom,\n    positiveTo,\n    speedLimit\n);\n// 反向：loadSite → 卸载点 / crusher / dump\nPathSegment reverseSeg = new PathSegment(\n    this,\n    positiveTo,\n    positiveFrom,\n    positiveFrom,\n    positiveTo,\n    speedLimit\n);\n\nsegmentMap.put(forwardSeg.key, forwardSeg);\nsegmentMap.put(reverseSeg.key, reverseSeg);\n\ntraceln(\"Add path: \" \n    + forwardSeg.key + \" dir=\" + forwardSeg.directionName \n    + \", \" \n    + reverseSeg.key + \" dir=\" + reverseSeg.directionName);",
+    "Main.gradeReward": "return clip(1.0 - gradeDeviation(gap), -1.0, 1.0);",
+    "Main.getCumulativeWaitVehicleSeconds": "double waitMinutes =\n    totalSystemLoadWaitTime + totalSystemDumpWaitTime;\n\n// 尚未开始服务的车辆也必须持续贡献等待积分\nfor (Truck t : trucks) {\n    if (t.isWaitingForLoadResource) {\n        waitMinutes += Math.max(0.0, time(MINUTE) - t.queueEnterTime);\n    }\n\n    if (t.isWaitingForDumpResource) {\n        waitMinutes += Math.max(\n            0.0,\n            time(MINUTE) - t.dumpQueueEnterTime\n        );\n    }\n}\n\nreturn waitMinutes * 60.0;",
+    "Main.settleCurrent2hWindow": "if (currentWindowIndex < 0 || currentWindowIndex >= 4) {\n    throw new IllegalStateException(\n        \"Invalid 2h window index: \" + currentWindowIndex\n    );\n}\nDumpSite crusher = getDumpSiteById(0);\n\ndouble boundarySec =\n    (currentWindowIndex + 1) * rlWindowSeconds;\n\n// 封窗时，破碎积分时钟必须恰好推进到对应边界。\nif (crusher == null\n    || !Double.isFinite(crusher.crusherClockSec)\n    || Math.abs(crusher.crusherClockSec - boundarySec) > 1e-7) {\n\n    throw new IllegalStateException(\n        \"Window settled away from crusher boundary: window=\"\n        + currentWindowIndex\n        + \" boundary=\" + boundarySec\n        + \" crusherClock=\"\n        + (crusher == null\n            ? \"NULL\"\n            : Double.toString(crusher.crusherClockSec))\n    );\n}\n\ndouble maxWindowTons =\n    crusher.crusherRateTph * rlWindowSeconds / 3600.0;\n\nif (!Double.isFinite(maxWindowTons) || maxWindowTons <= 0.0\n    || !Double.isFinite(windowOreTons) || windowOreTons < 0.0\n    || !Double.isFinite(windowMetalTons) || windowMetalTons < 0.0\n    || windowMetalTons > windowOreTons + 1e-6\n    || windowOreTons > maxWindowTons + 1e-5) {\n\n    throw new IllegalStateException(\n        \"Invalid window material/capacity: window=\"\n        + currentWindowIndex\n        + \" tons=\" + windowOreTons\n        + \" metal=\" + windowMetalTons\n        + \" maxTons=\" + maxWindowTons\n    );\n}\ndouble grade = windowOreTons > 0\n    ? windowMetalTons / windowOreTons\n    : 0.0;\n\ndouble gap = windowOreTons > 0\n    ? targetGrade - grade\n    : targetGrade;\n\nclosedWindowOreTons[currentWindowIndex] = windowOreTons;\nclosedWindowMetalTons[currentWindowIndex] = windowMetalTons;\nclosedWindowGrades[currentWindowIndex] = grade;\nclosedWindowGradeGaps[currentWindowIndex] = gap;\n\ndouble rawGradeReward = gradeReward(gap);\ndouble weightedGradeReward = wGrade2h * rawGradeReward;\n\npendingGrade2hReward += weightedGradeReward;\n\npendingClosedWindows.add(\n    WindowSummary.newBuilder()\n        .setWindowIndex(currentWindowIndex)\n        .setWindowStartSeconds(currentWindowIndex * rlWindowSeconds)\n        .setWindowEndSeconds((currentWindowIndex + 1) * rlWindowSeconds)\n        .setOreTons(windowOreTons)\n        .setMetalTons(windowMetalTons)\n        .setGrade(grade)\n        .setGradeGap(gap)\n        .setGradeRewardRaw(rawGradeReward)\n        .setGradeRewardWeighted(weightedGradeReward)\n        .setViolationUpper(windowOreTons > 0.0 && grade > gradeUpperBound + 1e-12)\n        .setViolationLower(windowOreTons <= 0.0 || grade < gradeLowerBound - 1e-12)\n        .build()\n);\n\ncurrentWindowIndex++;\nwindowOreTons = 0.0;\nwindowMetalTons = 0.0;",
+    "Main.advanceCompletedGradeWindows": "if (!Double.isFinite(nowSec)) {\n    throw new IllegalArgumentException(\"Invalid grade-window time\");\n}\n\nDumpSite crusher = getDumpSiteById(0);\n\nif (crusher == null || !crusher.acceptsOre) {\n    throw new IllegalStateException(\"Missing ore crusher\");\n}\n\n// 只有实际完成破碎积分的时间，才允许用于结算窗口。\n// 即使当前仿真时间已经越过边界，也不能提前封窗。\ndouble processedSec = Math.min(\n    Math.min(nowSec, crusher.crusherClockSec),\n    rlShiftSeconds\n);\n\n// 前三个窗口在破碎推进过程中结算。\n// 第四个仍由 finishEpisodeAndNotify() 结算。\nwhile (\n    currentWindowIndex < 3\n    && processedSec >= (currentWindowIndex + 1) * rlWindowSeconds\n) {\n    settleCurrent2hWindow();\n}",
+    "Main.finishEpisodeAndNotify": "if (episodeClosed) {\n    return;\n}\nauditClose(\"finishEpisodeAndNotify must run at cutoff\", time(SECOND), rlShiftSeconds);\ndouble nowSec = rlShiftSeconds;\n// 协调站点结转至班末；破碎业务状态仍由该 DumpSite 自己维护。\ngetDumpSiteById(0).advanceCrusherTo(nowSec);\n\n// 先关闭尚未关闭的前三个窗口\nadvanceCompletedGradeWindows(nowSec);\n\n// 再关闭第 4 个窗口\nif (currentWindowIndex == 3) {\n    settleCurrent2hWindow();\n}\nif (enableMaterialAudit) {\n    printMaterialAuditSummary();\n}\nprintIdleTimeSummary();\ndouble shiftGrade =\n    crusherOreTons > 0\n    ? crusherMetalTons / crusherOreTons\n    : 0.0;\n\ndouble shiftGap =\n    crusherOreTons > 0\n    ? targetGrade - shiftGrade\n    : targetGrade;\n\npendingGradeShiftReward =\n    wGradeShift * gradeReward(shiftGap);\n\ndouble productionFraction =\n    crusherOreTons / targetOreTonsShift;\n\ndouble productionShortfall =\n    clip(1.0 - productionFraction, 0.0, 1.0);\n\npendingProductionReward =\n    -wProduction * productionShortfall;\n\ndouble cumulativeWait = getCumulativeWaitVehicleSeconds();\n\ndouble wasteShortfallTons = Math.max(0.0, targetWasteTonsShift - totalWasteMoved);\ndouble oreShortfallTons = Math.max(0.0, targetOreTonsShift - crusherOreTons);\ndouble carriedOre = 0.0;\ndouble carriedWaste = 0.0;\ndouble loadingReserved = 0.0;\nfor (Truck truck : trucks) {\n    if (truck.isLoaded) {\n        if (truck.payloadIsOre) carriedOre += truck.payloadTons;\n        else carriedWaste += truck.payloadTons;\n    }\n    loadingReserved += truck.plannedPayloadTons;\n}\nDumpSite crusherSite = getDumpSiteById(0);\ndouble receivedOre = crusherSite.receivedTons;\nif (Math.abs(receivedOre - crusherOreTons - crusherSite.crusherStoredTons) > 1e-5) {\n    throw new IllegalStateException(\"Crusher mass balance failed\");\n}\ndouble completedOreLoads = 0.0;\ndouble completedWasteLoads = 0.0;\ndouble siteReservations = 0.0;\nfor (LoadSite s : loadSites) {\n    if (s.remainingTons < -1e-6 || s.reservedTons < -1e-6\n        || s.reservedTons > s.remainingTons + 1e-6) {\n        throw new IllegalStateException(\"Invalid source balance at \" + s.siteName);\n    }\n    siteReservations += s.reservedTons;\n    if (s.isOre) completedOreLoads += s.producedTons;\n    else completedWasteLoads += s.producedTons;\n}\nif (Math.abs(completedOreLoads - receivedOre - carriedOre) > 1e-5\n    || Math.abs(completedWasteLoads - totalWasteMoved - carriedWaste) > 1e-5\n    || Math.abs(siteReservations - loadingReserved) > 1e-5) {\n    throw new IllegalStateException(\"Source/transport mass balance failed\");\n}\ndouble windowSum = 0.0;\nint violations = 0;\nfor (int i = 0; i < 4; i++) {\n    windowSum += closedWindowOreTons[i];\n    if (closedWindowOreTons[i] <= 0.0\n        || closedWindowGrades[i] < gradeLowerBound - 1e-12\n        || closedWindowGrades[i] > gradeUpperBound + 1e-12) violations++;\n    traceln(\"[WINDOW] index=\" + i + \" tons=\" + closedWindowOreTons[i]\n        + \" grade=\" + closedWindowGrades[i]);\n}\nif (Math.abs(windowSum - crusherOreTons) > 1e-5) {\n    throw new IllegalStateException(\"Window tons do not sum to shift output\");\n}\ntraceln(\"[SHIFT] crushedOre=\" + crusherOreTons\n    + \" oreShortfall=\" + oreShortfallTons\n    + \" wasteDelivered=\" + totalWasteMoved\n    + \" wasteShortfall=\" + wasteShortfallTons\n    + \" wasteMet=\" + (wasteShortfallTons <= 1e-6)\n    + \" windowViolations=\" + violations\n    + \" receivedOre=\" + receivedOre\n    + \" bufferTons=\" + crusherSite.crusherStoredTons\n    + \" unloadingReserved=\" + crusherSite.crusherReservedTons\n    + \" carriedOre=\" + carriedOre + \" carriedWaste=\" + carriedWaste\n    + \" assignedNotLoaded=\" + loadingReserved\n    + \" waitVehicleSeconds=\" + cumulativeWait);\nif (currentDispatchPolicy >= 0 && currentDispatchPolicy <= 2) {\n    double loadWaitMin = totalSystemLoadWaitTime;\n    double dumpWaitMin = totalSystemDumpWaitTime;\n    for (Truck other : trucks) {\n        if (other.isWaitingForLoadResource) loadWaitMin += Math.max(0.0, time(MINUTE) - other.queueEnterTime);\n        if (other.isWaitingForDumpResource) dumpWaitMin += Math.max(0.0, time(MINUTE) - other.dumpQueueEnterTime);\n    }\n    StringBuilder json = new StringBuilder(\"{\\\"type\\\":\\\"terminal\\\",\\\"policy\\\":\");\n    json.append(currentDispatchPolicy).append(\",\\\"run_index\\\":\").append(experimentRunIndex)\n        .append(\",\\\"experiment_seed\\\":\").append(experimentSeed)\n        .append(\",\\\"sim_time_seconds\\\":\").append(nowSec)\n        .append(\",\\\"ore_tons_shift\\\":\").append(crusherOreTons)\n        .append(\",\\\"waste_tons_shift\\\":\").append(totalWasteMoved)\n        .append(\",\\\"waste_target_tons\\\":\").append(targetWasteTonsShift)\n        .append(\",\\\"waste_shortfall_tons\\\":\").append(wasteShortfallTons)\n        .append(\",\\\"crusher_received_tons\\\":\").append(receivedOre)\n        .append(\",\\\"crusher_buffer_tons\\\":\").append(crusherSite.crusherStoredTons)\n        .append(\",\\\"metal_tons_shift\\\":\").append(crusherMetalTons)\n        .append(\",\\\"grade_shift\\\":\").append(shiftGrade)\n        .append(\",\\\"grade_gap_shift\\\":\").append(shiftGap)\n        .append(\",\\\"wait_vehicle_seconds\\\":\").append(cumulativeWait)\n        .append(\",\\\"load_wait_vehicle_seconds\\\":\").append(loadWaitMin * 60.0)\n        .append(\",\\\"dump_wait_vehicle_seconds\\\":\").append(dumpWaitMin * 60.0)\n        .append(\",\\\"windows\\\":[\");\n    for (int i = 0; i < pendingClosedWindows.size(); i++) {\n        if (i > 0) json.append(\",\");\n        WindowSummary w = pendingClosedWindows.get(i);\n        json.append(\"{\\\"window_index\\\":\").append(w.getWindowIndex())\n            .append(\",\\\"window_start_seconds\\\":\").append(w.getWindowStartSeconds())\n            .append(\",\\\"window_end_seconds\\\":\").append(w.getWindowEndSeconds())\n            .append(\",\\\"ore_tons\\\":\").append(w.getOreTons())\n            .append(\",\\\"metal_tons\\\":\").append(w.getMetalTons())\n            .append(\",\\\"grade\\\":\").append(w.getGrade())\n            .append(\",\\\"grade_gap\\\":\").append(w.getGradeGap())\n            .append(\",\\\"violation_upper\\\":\").append(w.getViolationUpper())\n            .append(\",\\\"violation_lower\\\":\").append(w.getViolationLower()).append(\"}\");\n    }\n    json.append(\"],\\\"load_sites\\\":[\");\n    for (int i = 0; i < loadSites.size(); i++) {\n        if (i > 0) json.append(\",\");\n        LoadSite site = loadSites.get(i);\n        json.append(\"{\\\"site_id\\\":\").append(site.siteId)\n            .append(\",\\\"grade\\\":\").append(site.grade)\n            .append(\",\\\"produced_tons_at_terminal\\\":\").append(site.producedTons).append(\"}\");\n    }\n    json.append(\"]}\");\n    //ruleEvalWrite(json.toString());\n    episodeClosed = true;\n    getEngine().finish();\n    return;\n}\n\ndouble deltaWaitVehicleSeconds = Math.max(\n    0.0,\n    cumulativeWait - lastWaitVehicleSeconds\n);\n\ndouble waitReward = -wWait * clip(\n    (deltaWaitVehicleSeconds / Math.max(1, trucks.size()))\n        / waitRefSeconds,\n    0.0,\n    1.0\n);\n\ndouble finalReward =\n    waitReward\n    + pendingGradeActionReward\n    + pendingGrade2hReward\n    + pendingGradeShiftReward\n    + pendingProductionReward;\n      \nObservation terminalObs;\nif (usePhysicalObservation) {\n    terminalObs = buildPhysicalObservation(null);\n} else {\n    terminalObs = lastDispatchObservation;\n    if (terminalObs == null) {\n        if (trucks.isEmpty()) throw new IllegalStateException(\"No terminal observation\");\n        terminalObs = buildObservation(trucks.get(0));\n    }\n}\n\nlong seq = decisionSequence++;\n\nDispatchRequest request = DispatchRequest.newBuilder()\n    .setTruckId(-1)\n    .setObs(terminalObs)\n    .setEpisodeId(episodeId)\n    .setDecisionSequence(seq)\n    .setRequestId(episodeId + \"-\" + seq)\n    .setKind(DispatchKind.EPISODE_END)\n    .setActionRequired(false)\n    .setPreviousAction(previousAction)\n    .setTransitionReward(finalReward)\n    .putRewardComponents(\"wait\", waitReward)\n    .putRewardComponents(\"grade_2h\", pendingGrade2hReward)\n    .putRewardComponents(\"grade_shift\", pendingGradeShiftReward)\n    .putRewardComponents(\"production\", pendingProductionReward)\n    .putRewardComponents(\n        \"delta_wait_vehicle_seconds\",\n        deltaWaitVehicleSeconds\n    )\n    .putRewardComponents(\"shift_grade\", shiftGrade)\n\t.putRewardComponents(\"grade_gap_shift\", shiftGap)\n\t.putRewardComponents(\n\t    \"grade_shift_reward_raw\",\n\t    gradeReward(shiftGap)\n\t)\n\t.putRewardComponents(\n\t    \"production_fraction_raw\",\n\t    productionFraction\n\t)\n\t.putRewardComponents(\"ore_tons_shift\", crusherOreTons)\n    .setSimTimeSeconds(nowSec)\n    .setSimTimeDeltaSeconds(\n        Math.max(0.0, nowSec - lastDecisionTimeSec)\n    )\n\t.putRewardComponents(\n\t    \"grade_action\",\n\t    pendingGradeActionReward\n\t)\n\t.putRewardComponents(\n\t    \"production_shortfall\",\n\t    productionShortfall\n\t)\n    .setTerminated(true)\n    .setTruncated(false)\n\t.addAllClosedWindows(pendingClosedWindows)\n\t.setExperimentRunIndex(experimentRunIndex)\n\t.setExperimentSeed(experimentSeed)\n\t.setRewardContractId(rewardContractId)\n    .build();\n\nrlClient.getDispatchResult(request);\npendingClosedWindows.clear();\nepisodeClosed = true;\ngetEngine().finish();",
+    "Main.gradeDeviation": "if (!Double.isFinite(gap)) return 3.0;\ndouble allowance = gap < 0.0\n    ? gradeUpperBound - targetGrade\n    : targetGrade - gradeLowerBound;\nif (allowance <= 0.0) throw new IllegalStateException(\"Invalid grade interval\");\nreturn clip(Math.abs(gap) / allowance, 0.0, 3.0);",
+    "Main.calculateGradeActionReward": "LoadSite site = getLoadSiteById(action);\n\nif (site == null) {\n    return 0.0;\n}\n\nif (!site.isOre) {\n    double shiftProgress =\n        clip(time(SECOND) / rlShiftSeconds, 0.0, 1.0);\n\n    double productionProgress =\n        clip(\n            crusherOreTons / targetOreTonsShift,\n            0.0,\n            1.0\n        );\n\n    double productionLag =\n        shiftProgress - productionProgress;\n\n    // 产量进度没有落后时允许选择WASTE；\n    // 落后超过5%时，WASTE受到完整惩罚。\n    double lagFactor = clip(\n        productionLag / productionLagTolerance,\n        0.0,\n        1.0\n    );\n\n    return -wWasteLag * lagFactor;\n}\n\ndouble expectedTons = Math.max(1.0, t.capacity);\ndouble priorTons = Math.max(gradePriorTons, expectedTons);\n\n// --------------------------------------------------\n// 1. 当前2小时窗口的反事实品位变化\n// 使用目标品位的虚拟初始矿量，避免窗口初期一辆车\n// 就把品位从0.25跳到0.38或0.15。\n// --------------------------------------------------\n\ndouble windowTonsBefore = windowOreTons + priorTons;\ndouble windowMetalBefore =\n    windowMetalTons + priorTons * targetGrade;\n\ndouble windowGradeBefore =\n    windowMetalBefore / windowTonsBefore;\n\ndouble windowGapBefore =\n    targetGrade - windowGradeBefore;\n\ndouble windowTonsAfter =\n    windowTonsBefore + expectedTons;\n\ndouble windowMetalAfter =\n    windowMetalBefore + expectedTons * site.grade;\n\ndouble windowGradeAfter =\n    windowMetalAfter / windowTonsAfter;\n\ndouble windowGapAfter =\n    targetGrade - windowGradeAfter;\n\ndouble windowImprovement =\n    gradeDeviation(windowGapBefore)\n    - gradeDeviation(windowGapAfter);\n\nwindowImprovement = clip(\n    windowImprovement,\n    -gradeActionDeltaClip,\n    gradeActionDeltaClip\n);\n\n// --------------------------------------------------\n// 2. 班次累计品位的反事实变化\n// --------------------------------------------------\n\ndouble shiftTonsBefore =\n    crusherOreTons + priorTons;\n\ndouble shiftMetalBefore =\n    crusherMetalTons + priorTons * targetGrade;\n\ndouble shiftGradeBefore =\n    shiftMetalBefore / shiftTonsBefore;\n\ndouble shiftGapBefore =\n    targetGrade - shiftGradeBefore;\n\ndouble shiftTonsAfter =\n    shiftTonsBefore + expectedTons;\n\ndouble shiftMetalAfter =\n    shiftMetalBefore + expectedTons * site.grade;\n\ndouble shiftGradeAfter =\n    shiftMetalAfter / shiftTonsAfter;\n\ndouble shiftGapAfter =\n    targetGrade - shiftGradeAfter;\n\ndouble shiftImprovement =\n    gradeDeviation(shiftGapBefore)\n    - gradeDeviation(shiftGapAfter);\n\nshiftImprovement = clip(\n    shiftImprovement,\n    -gradeActionDeltaClip,\n    gradeActionDeltaClip\n);\n\n// 当前窗口更重要，班次累计用于防止窗口间抵消\ndouble rawReward =\n    0.70 * windowImprovement\n    + 0.30 * shiftImprovement;\n\nreturn wGradeAction * rawReward;",
+    "Main.obsInit": "if (trucks.size()!=9 || loadSites.size()!=4 || dumpSites.size()!=2 || segmentMap.size()!=16)\n    throw new IllegalStateException(\"dispatch.physical.v3 requires 9 trucks, 4 loads, 2 dumps, 16 directed segments\");\nif (!Double.isFinite(speedDtSec) || speedDtSec<=0.0)\n    throw new IllegalStateException(\"Invalid speed control period\");\nboolean[] ids = new boolean[9];\nfor (Truck t : trucks) {\n    if (t.truckId<0 || t.truckId>=9 || ids[t.truckId]) throw new IllegalStateException(\"Invalid truck ID\");\n    ids[t.truckId]=true;\n    if (t.capacity < 91.7-1e-8 || t.capacity > 193.0+1e-8)\n        throw new IllegalStateException(\"Recheck FIFO slot bound for changed truck capacities\");\n}\nfor (int i=0;i<4;i++) {\n    LoadSite s=getLoadSiteById(i);\n    if (s==null || s.shovelCapacity!=1 || s.gradeBlockTons<=193.0)\n        throw new IllegalStateException(\"Grade inference requires one shovel/site and payload < block tons\");\n}\nfor (String name : obsNodeNames) if(getRoadPointNode(name)==null)\n    throw new IllegalStateException(\"Missing observation node: \"+name);\nobsSegmentKeys.clear();\nobsSegmentKeys.addAll(segmentMap.keySet());\njava.util.Collections.sort(obsSegmentKeys);\nobsSchemaNames.clear();\nobsTraceCount=0L;\nobsReady=true;\ntraceln(\"[OBS_CONFIG] schema=dispatch.physical.v3 nodes=\"+java.util.Arrays.toString(obsNodeNames)\n    +\" segments=\"+obsSegmentKeys);",
+    "Main.buildPhysicalObservation": "getDumpSiteById(0).advanceCrusherTo(time(SECOND));\nadvanceCompletedGradeWindows(time(SECOND));\nDispatchObsWriter w=collectPhysicalObservation(ego);\nObservation.Builder b=Observation.newBuilder().setSchemaId(\"dispatch.physical.v3\");\nfor(double value:w.values) b.addValues((float)value);\nreturn b.build();",
+    "Main.collectPhysicalObservation": "if(!obsReady) throw new IllegalStateException(\"Call obsInit() before activating trucks\");\ndouble now=time(SECOND);\nboolean terminal=now>=rlShiftSeconds;\nif(!terminal && ego==null) throw new IllegalArgumentException(\"Decision truck required\");\nDumpSite crusher=getDumpSiteById(0);\nDispatchObsWriter w=new DispatchObsWriter();\n// Business state is read-only here; schema metadata is initialized/validated below.\n// Time synchronization belongs to buildPhysicalObservation()/dry run.\nif(Math.abs(crusher.crusherClockSec-Math.min(now,rlShiftSeconds))>1e-7)\n    throw new IllegalStateException(\"Synchronize crusher before collecting observation\");\nw.add(\"global.shiftElapsed\",Math.min(now,rlShiftSeconds)/28800.0);\nw.add(\"global.shiftRemaining\",Math.max(0.0,rlShiftSeconds-now)/28800.0);\nw.add(\"global.windowIndex\",currentWindowIndex/4.0);\ndouble end=Math.min(rlShiftSeconds,(currentWindowIndex+1.0)*rlWindowSeconds);\nw.add(\"global.windowRemaining\",Math.max(0.0,end-now)/7200.0);\nw.add(\"global.windowTons\",windowOreTons/5000.0);\nw.add(\"global.windowMetal\",windowMetalTons/5000.0);\nw.add(\"global.noSupply\",windowOreTons<=0?1:0);\nw.add(\"global.shiftOre\",crusherOreTons/20000.0);\nw.add(\"global.shiftMetal\",crusherMetalTons/20000.0);\nw.add(\"global.wasteDelivered\",totalWasteMoved/4000.0);\nw.add(\"global.wasteShortfall\",Math.max(0.0,targetWasteTonsShift-totalWasteMoved)/4000.0);\nw.add(\"global.oreTarget\",targetOreTonsShift/20000.0);\nw.add(\"global.wasteTarget\",targetWasteTonsShift/4000.0);\nw.add(\"global.gradeLower\",gradeLowerBound);\nw.add(\"global.gradeUpper\",gradeUpperBound);\nw.add(\"global.gradeTarget\",targetGrade);\nw.add(\"global.deterministic\",deterministicCheck?1:0);\nw.add(\"global.terminal\",terminal?1:0);\nw.add(\"global.speedTickPhase\",(now-Math.floor(now/speedDtSec)*speedDtSec)/speedDtSec);\nfor(int i=0;i<4;i++) {\n    LoadSite s=getLoadSiteById(i);\n    double availableTons=s.getAvailableTons();\n    w.add(\"actionMask.\"+i,!terminal && availableTons>1e-6?1:0);\n}\nfor(int i=0;i<4;i++) w.add(\"actionTons.\"+i,!terminal?Math.min(ego.capacity,getLoadSiteById(i).getAvailableTons())/193.0:0);\njava.util.ArrayList<Truck> ordered =\n    new java.util.ArrayList<Truck>();\n\nfor (Truck t : trucks) {\n    ordered.add(t);\n}\n\njava.util.Collections.sort(\n    ordered,\n    (a, b) -> Integer.compare(a.truckId, b.truckId)\n);\nfor(Truck t:ordered) t.appendDispatchObservation(w,terminal?null:ego);\nfor(int i=0;i<4;i++) getLoadSiteById(i).appendDispatchObservation(w);\nfor(int i=0;i<2;i++) getDumpSiteById(i).appendDispatchObservation(w);\ncrusher.appendCrusherFifoObservation(w);\nfor(int i=0;i<16;i++) {\n    PathSegment s=segmentMap.get(obsSegmentKeys.get(i));\n    String p=\"road.\"+i+\".\";\n    w.add(p+\"from\",(obsNodeIndex(s.from)+1.0)/9.0);\n    w.add(p+\"to\",(obsNodeIndex(s.to)+1.0)/9.0);\n    w.add(p+\"length\",s.length/10000.0);\n    w.add(p+\"limit\",s.speedLimit/10.0);\n    w.add(p+\"closed\",s.closed?1:0);\n}\nif(w.values.size()!=1519) throw new IllegalStateException(\"Expected 1519 physical observation values, got \"+w.values.size());\nif(obsSchemaNames.isEmpty()) obsSchemaNames.addAll(w.names);\nelse if(!obsSchemaNames.equals(w.names)) throw new IllegalStateException(\"Observation field order changed\");\nreturn w;",
+    "Main.obsCheckDecision": "if(!obsDryRun) return;\ngetDumpSiteById(0).advanceCrusherTo(time(SECOND));\nadvanceCompletedGradeWindows(time(SECOND));\nDispatchObsWriter a=collectPhysicalObservation(ego);\nDispatchObsWriter b=collectPhysicalObservation(ego);\nif(!a.values.equals(b.values) || !a.names.equals(b.names))\n    throw new IllegalStateException(\"Observation is not repeatable at one simulation instant\");\nobsTraceCount++;\nif(obsTraceCount==1) {\n    traceln(\"[OBS_SCHEMA_BEGIN]\\n\"+a.schemaCsv()+\"[OBS_SCHEMA_END]\");\n}\nif(obsTraceCount<=3 || obsTraceCount%50==0) {\n    traceln(\"[OBS_CHECK] count=\"+obsTraceCount+\" dim=\"+a.values.size()\n        +\" tSec=\"+time(SECOND)+\" ego=\"+ego.truckId\n        +\" mask=\"+a.values.subList(19,23));\n}",
+    "Main.StartupCode": "if (numTrucks <= 0) {\n    throw new IllegalStateException(\"numTrucks must be > 0\");\n}\nif (targetOreTons2h <= 0 || targetOreTonsShift <= 0) {\n    throw new IllegalStateException(\n        \"targetOreTons2h and targetOreTonsShift must be > 0\"\n    );\n}\n/*if (Math.abs(targetGrade - 0.25) > 1e-9) {\n    throw new IllegalStateException(\"dispatch.v2-31 requires targetGrade=0.25\");\n}*/\n\nif (experimentRunIndex <= 0 || experimentSeed <= 0) {\n    throw new IllegalStateException(\n        \"experimentRunIndex and experimentSeed must be positive\"\n    );\n}\n\n/*if (\n    Math.abs(numTrucks - 20.0) > 1e-9\n    || Math.abs(targetGrade - 0.25) > 1e-9\n    || Math.abs(rlShiftSeconds - 28800.0) > 1e-9\n    || Math.abs(rlWindowSeconds - 7200.0) > 1e-9\n    || Math.abs(waitRefSeconds - 200.0) > 1e-9\n    || Math.abs(targetOreTons2h - 20000.0) > 1e-9\n    || Math.abs(targetOreTonsShift - 80000.0) > 1e-9\n    || Math.abs(wWait - 1.0) > 1e-9\n    || Math.abs(wGrade2h - 1.0) > 1e-9\n    || Math.abs(wGradeShift - 6.0) > 1e-9\n    || Math.abs(wProduction - 4.0) > 1e-9\n    || Math.abs(wGradeAction - 0.15) > 1e-9\n    || Math.abs(gradePriorTons - 20000.0) > 1e-9\n    || Math.abs(gradeActionDeltaClip - 0.10) > 1e-9\n    || Math.abs(wWasteLag - 0.02) > 1e-9\n    || Math.abs(productionLagTolerance - 0.05) > 1e-9\n) {\n    throw new IllegalStateException(\n        \"Reward parameters do not match \" + rewardContractId\n    );\n}*/\n\ngetEngine().setDefaultRandomGenerator(\n    new java.util.Random(experimentSeed)\n);\n\nepisodeId = rewardContractId\n    + \"-run-\" + experimentRunIndex\n    + \"-seed-\" + experimentSeed;\npendingClosedWindows.clear();\n\ntraceln(\n    \"[P0] contract=\" + rewardContractId\n    + \" run_index=\" + experimentRunIndex\n    + \" experiment_seed=\" + experimentSeed\n);\ndecisionSequence = 0;\nepisodeStarted = false;\nepisodeClosed = false;\npreviousAction = -1;\n\ncurrentWindowIndex = 0;\nwindowOreTons = 0;\nwindowMetalTons = 0;\n\npendingGradeActionReward = 0;\npendingGrade2hReward = 0;\npendingGradeShiftReward = 0;\npendingProductionReward = 0;\n\nenableDispatchFallback = false;\nisWarmUp = false;\ntotalSystemLoadWaitTime = 0.0;\ntotalSystemDumpWaitTime = 0.0;\njava.util.Arrays.fill(closedWindowOreTons, 0.0);\nmaterialAuditReady = false;\nmaterialAuditChecks = 0L;\njava.util.Arrays.fill(closedWindowMetalTons, 0.0);\njava.util.Arrays.fill(closedWindowGrades, 0.0);\njava.util.Arrays.fill(closedWindowGradeGaps, 0.0);\ninit1();\ninitRoadPointNodeMap();\ninit_network();\ninit_routeNodeMap();\ninitDynamicSpeedModel();\nobsInit();\n\nif (enableOnnxDispatch) {\n    rlClient = new RLClient(\n        dispatchInferenceHost,\n        dispatchInferencePort,\n        dispatchInferenceTimeoutMs\n    );\n}\ncom.anylogic.engine.markup.Path[] roads = {\n    path5, path2, path7, path8,\n    path6, path, path1, path3\n};\n\nString[] roadNames = {\n    \"Crusher—intersection1\",\n    \"intersection1—intersection2\",\n    \"intersection2—intersection3\",\n    \"intersection2—HG1\",\n    \"intersection3—HG2\",\n    \"intersection3—LG\",\n    \"intersection2—WASTE\",\n    \"intersection2—Dump\"\n};\n\ntraceln(\"===== 各路段长度 =====\");\n\nfor (int i = 0; i < roads.length; i++) {\n    traceln(String.format(\n        java.util.Locale.US,\n        \"%s：%.3f px，%.3f m\",\n        roadNames[i],\n        roads[i].length(),\n        roads[i].length(METER)\n    ));\n}\nauditRequire(Math.abs(rlShiftSeconds - 28800.0) <= 1e-9\n    && Math.abs(rlWindowSeconds - 7200.0) <= 1e-9,\n    \"This audit configuration requires a 480 min shift and four 120 min windows\");\nauditRequire(warmUpTime == 0 && Math.abs(shiftDuration - 480.0) <= 1e-9,\n    \"This scenario uses warmUpTime=0 and shiftDuration=480 min\");\nauditClose(\"configured crusher capacity\", getDumpSiteById(0).crusherBufferCapacityTons, 500.0);\nmaterialAuditReady = true;\nauditMaterialBalances(\"INITIAL\");\nfor (Truck t : trucks) {\n    t.deliver(\"ACTIVATE\", t);\n}\nlastWaitVehicleSeconds = getCumulativeWaitVehicleSeconds();\nlastDecisionTimeSec = time(SECOND);",
+    "Truck.obsRecordMotion": "boolean moving=\"TO_LOAD\".equals(executionPhase)||\"TO_DUMP\".equals(executionPhase);\ndouble now=time(SECOND);\nif(!moving || currentSegment==null || now<=obsLastMotionSec+1e-9) return;\ndouble v=getSpeed();\ndouble gap=hasFront?frontDis:0.0;\ndouble fv=hasFront?frontSpeed:0.0;\nobsMotionSamples.addLast(new double[]{now,v,dynamicAccel,hasFront?1.0:0.0,gap,fv});\nwhile(obsMotionSamples.size()>4) obsMotionSamples.removeFirst();\nobsLastMotionSec=now;\n// Observable near-steady free-flow speed ratio; this is an estimate, not the hidden draw.\nif((!hasFront || frontDis>=main.followRangeM) && Math.abs(dynamicAccel)<0.05) {\n    double vehicleKph=isLoaded?(truckType==0?20:truckType==1?18:16):(truckType==0?26:truckType==1?24:22);\n    double base=main.getBaseSpeedMps(currentSegment,isLoaded)*vehicleKph/(isLoaded?20.0:26.0);\n    if(base>1e-9) {\n        double ratio=v/base;\n        obsFreeCount++;\n        double delta=ratio-obsFreeMean;\n        obsFreeMean+=delta/obsFreeCount;\n        obsFreeM2+=delta*(ratio-obsFreeMean);\n    }\n}",
+    "Truck.appendDispatchObservation": "String p=\"truck.\"+truckId+\".\";\ndouble now=time(SECOND);\nboolean decision=this==ego;\nboolean loading=!isLoaded && \"LOADING\".equals(executionPhase);\nboolean dumping=isLoaded && \"DUMPING\".equals(executionPhase);\nboolean moving=(\"TO_LOAD\".equals(executionPhase)||\"TO_DUMP\".equals(executionPhase)) && !decision;\nint dumpWaitStage=0;\nfor(DumpSite ds:main.dumpSites) {\n    if(ds.dumpCapacityWaitOrder.contains(this)) dumpWaitStage=2;\n    if(ds.obsAdmissionTruck==this) dumpWaitStage=3;\n}\nif(dumpWaitStage==0 && isWaitingForDumpResource) dumpWaitStage=1;\nint phase=11;\nif(decision) phase=0;\nelse if(!initialDispatchDone) phase=1;\nelse if(\"TO_LOAD\".equals(executionPhase)) phase=2;\nelse if(isWaitingForLoadResource) phase=3;\nelse if(loading) phase=4;\nelse if(\"TO_DUMP\".equals(executionPhase)) phase=5;\nelse if(dumpWaitStage==1) phase=6;\nelse if(dumpWaitStage==2) phase=7;\nelse if(dumpWaitStage==3) phase=8;\nelse if(dumping) phase=9;\nelse if(\"COMPLETED\".equals(executionPhase)||\"NO_AVAILABLE_MATERIAL\".equals(executionPhase)) phase=10;\nw.add(p+\"ego\",decision?1:0);\nw.oneHot(p+\"type.\",truckType,3);\nw.oneHot(p+\"phase.\",phase,12);\nw.add(p+\"capacity\",capacity/193.0);\nw.add(p+\"loaded\",isLoaded?1:0);\nw.add(p+\"ore\",isLoaded?(payloadIsOre?1:0):(plannedPayloadTons>0 && targetShovel!=null && targetShovel.isOre?1:0));\nw.add(p+\"payloadTons\",payloadTons/193.0);\nw.add(p+\"reservedLoadTons\",plannedPayloadTons/193.0);\nw.add(p+\"gradeKnown\",isLoaded?1:0);\nw.add(p+\"payloadGrade\",isLoaded?payloadGrade:0.0);\ndouble[] gs=loading?targetShovel.obsGradeStats(obsLoadMaterialStart,plannedPayloadTons):new double[]{0,0,0};\nw.add(p+\"loadingGradeMean\",gs[0]);\nw.add(p+\"loadingGradeStd\",gs[1]);\nw.add(p+\"loadingGradeInferred\",gs[2]);\nw.oneHot(p+\"loadTarget.\",!decision && plannedPayloadTons>0 && targetShovel!=null?targetShovel.siteId:-1,4);\nw.oneHot(p+\"dumpTarget.\",isLoaded?(payloadIsOre?0:1):-1,2);\nw.oneHot(p+\"node.\",main.obsNodeIndex(currentNode),9);\nw.add(p+\"xM\",main.toLengthUnits(getX(),METER)/10000.0);\nw.add(p+\"yM\",main.toLengthUnits(getY(),METER)/10000.0);\nw.add(p+\"speed\",getSpeed()/10.0);\nw.add(p+\"acceleration\",dynamicAccel/3.0);\nint seg=moving?main.obsSegmentIndex(currentSegment):-1;\nw.oneHot(p+\"segment.\",seg,16);\ndouble remaining=seg>=0?calculateDisOnSeg():0.0;\nw.add(p+\"segmentRemaining\",remaining/10000.0);\ndouble totalRemaining=remaining;\ndouble[] routeOrder=new double[16];\nif(seg>=0) {\n    for(int j=currentSegmentIndex;j<currentRouteSegments.size();j++) {\n        PathSegment rs=currentRouteSegments.get(j);\n        int ri=main.obsSegmentIndex(rs);\n        if(routeOrder[ri]!=0) throw new IllegalStateException(\"Route repeats a segment; change encoding\");\n        routeOrder[ri]=(j-currentSegmentIndex+1.0)/16.0;\n        if(j>currentSegmentIndex) totalRemaining+=rs.length;\n    }\n}\nw.add(p+\"routeRemaining\",totalRemaining/10000.0);\nfor(int i=0;i<16;i++) w.add(p+\"routeOrder.\"+i,routeOrder[i]);\nint ahead=0;\nif(seg>=0) for(Truck other:main.trucks) {\n    if(other!=this && other.currentSegment!=null && currentSegment.key.equals(other.currentSegment.key)\n        && (other.laneEntrySeq<laneEntrySeq || (other.laneEntrySeq==laneEntrySeq && other.truckId<truckId))) ahead++;\n}\nw.add(p+\"laneRank\",seg>=0?(ahead+1.0)/9.0:0.0);\nw.add(p+\"initialDispatched\",initialDispatchDone?1:0);\nw.add(p+\"initialPredecessor\",initialPredecessor==null?0:(initialPredecessor.truckId+1.0)/9.0);\nw.add(p+\"loadWaitAge\",isWaitingForLoadResource?Math.max(0.0,now-60.0*queueEnterTime)/28800.0:0.0);\nw.add(p+\"dumpWaitAge\",isWaitingForDumpResource?Math.max(0.0,now-60.0*dumpQueueEnterTime)/28800.0:0.0);\nw.add(p+\"loadAge\",loading?Math.max(0.0,now-60.0*loadStartTime)/600.0:0.0);\nw.add(p+\"loadMean\",loading?targetShovel.obsMeanLoadMinutes(plannedPayloadTons)/10.0:0.0);\nw.add(p+\"loadMaterialStart\",loading?obsLoadMaterialStart/30000.0:0.0);\nw.add(p+\"dumpAge\",dumping?Math.max(0.0,now-60.0*dumpServiceStartTime)/600.0:0.0);\nw.add(p+\"dumpMean\",dumping?main.getDumpSiteById(targetDumpSiteId).obsMeanDumpMinutes(this)/10.0:0.0);\nw.add(p+\"freeSamples\",obsFreeCount/1000.0);\nw.add(p+\"freeRatioMean\",obsFreeCount>0?obsFreeMean:0.0);\nw.add(p+\"freeRatioStd\",obsFreeCount>1?Math.sqrt(Math.max(0.0,obsFreeM2/(obsFreeCount-1))):0.0);\njava.util.ArrayList<double[]> hist=new java.util.ArrayList<double[]>(obsMotionSamples);\nfor(int i=0;i<4;i++) {\n    double[] h=i<hist.size()?hist.get(i):null;\n    String hp=p+\"motion.\"+i+\".\";\n    w.add(hp+\"valid\",h==null?0:1);\n    w.add(hp+\"age\",h==null?0:Math.max(0.0,now-h[0])/28800.0);\n    w.add(hp+\"speed\",h==null?0:h[1]/10.0);\n    w.add(hp+\"acceleration\",h==null?0:h[2]/3.0);\n    w.add(hp+\"hasFront\",h==null?0:h[3]);\n    w.add(hp+\"frontGap\",h==null?0:h[4]/10000.0);\n    w.add(hp+\"frontSpeed\",h==null?0:h[5]/10.0);\n}",
+    "DumpSite.advanceCrusherTo": "if (!acceptsOre) return;\n\nif (!Double.isFinite(nowSec) || nowSec < 0.0) {\n    throw new IllegalArgumentException(\"Invalid crusher time\");\n}\n\nif (!Double.isFinite(crusherClockSec) || crusherClockSec < 0.0) {\n    throw new IllegalStateException(\"Invalid crusher clock\");\n}\n\ndouble endSec = Math.min(nowSec, main.rlShiftSeconds);\n\nif (endSec <= crusherClockSec) return;\n\ndouble rate = crusherRateTph / 3600.0;\n\nif (!Double.isFinite(rate) || rate <= 0.0\n    || !Double.isFinite(main.rlWindowSeconds)\n    || main.rlWindowSeconds <= 0.0) {\n\n    throw new IllegalStateException(\n        \"Invalid crusher rate/window length\"\n    );\n}\n\nwhile (crusherClockSec < endSec) {\n\n    // 先确认此前实际完成积分的窗口已经结算。\n    main.advanceCompletedGradeWindows(crusherClockSec);\n\n    int w = main.currentWindowIndex;\n\n    if (w < 0 || w >= 4) {\n        throw new IllegalStateException(\n            \"Crusher cannot produce after all windows are closed\"\n        );\n    }\n\n    // 以当前统计窗口确定下一条边界。\n    double boundarySec = (w + 1) * main.rlWindowSeconds;\n    double stopSec = Math.min(endSec, boundarySec);\n\n    if (stopSec <= crusherClockSec) {\n        throw new IllegalStateException(\n            \"Crusher/window clock mismatch: clock=\"\n            + crusherClockSec\n            + \" window=\" + w\n            + \" boundary=\" + boundarySec\n        );\n    }\n\n    double processable = (stopSec - crusherClockSec) * rate;\n\n    while (processable > 1e-9 && !crusherFifo.isEmpty()) {\n\n        double[] batch = crusherFifo.peekFirst();\n\n        if (batch == null || batch.length != 2\n            || !Double.isFinite(batch[0]) || batch[0] <= 0.0\n            || !Double.isFinite(batch[1])\n            || batch[1] < 0.0 || batch[1] > 1.0) {\n\n            throw new IllegalStateException(\n                \"Invalid crusher FIFO batch\"\n            );\n        }\n\n        double tons = Math.min(processable, batch[0]);\n\n        // 这部分产出全部属于当前窗口。\n        main.updateCrusherGrade(tons, batch[1]);\n\n        batch[0] -= tons;\n        crusherStoredTons -= tons;\n        processable -= tons;\n\n        if (batch[0] <= 1e-9) {\n            crusherFifo.removeFirst();\n        }\n    }\n\n    crusherStoredTons = Math.max(0.0, crusherStoredTons);\n\n    // 必须先完成积分并更新破碎时钟，再结算窗口。\n    crusherClockSec = stopSec;\n\n    main.advanceCompletedGradeWindows(crusherClockSec);\n}",
+    "DumpSite.appendDispatchObservation": "String p=\"dump.\"+siteId+\".\";\nw.add(p+\"available\",available?1:0);\nw.add(p+\"acceptsOre\",acceptsOre?1:0);\nw.add(p+\"capacity\",serviceCapacity/3.0);\nw.add(p+\"occupied\",dumpResource.busy()/3.0);\nw.add(p+\"dumping\",numInDumpService/3.0);\nw.add(p+\"bufferTons\",acceptsOre?crusherStoredTons/500.0:0.0);\nw.add(p+\"reservedTons\",acceptsOre?crusherReservedTons/500.0:0.0);\nw.add(p+\"freeBufferTons\",acceptsOre?(crusherBufferCapacityTons-crusherStoredTons-crusherReservedTons)/500.0:0.0);\nw.add(p+\"bufferCapacity\",acceptsOre?crusherBufferCapacityTons/500.0:0.0);\nw.add(p+\"crusherRate\",acceptsOre?crusherRateTph/2500.0:0.0);\nw.add(p+\"admissionPending\",dumpAdmissionPending?1:0);\nw.add(p+\"admissionTruck\",obsAdmissionTruck==null?0:(obsAdmissionTruck.truckId+1.0)/9.0);\njava.util.ArrayList<Truck> q=new java.util.ArrayList<Truck>();\nfor(int i=0;i<queueDump.size();i++) q.add((Truck)queueDump.get(i));\nw.truckSlots(p+\"queue.\",q);\nq.clear();\nfor(int i=0;i<seizeDump.size();i++) q.add((Truck)seizeDump.get(i));\nw.truckSlots(p+\"seize.\",q);\nw.truckSlots(p+\"capacityWait.\",dumpCapacityWaitOrder);\nq.clear();\nfor(int i=0;i<delayDump.size();i++) q.add((Truck)delayDump.get(i));\njava.util.Collections.sort(q,(a,b)->Integer.compare(a.truckId,b.truckId));\nw.truckSlots(p+\"service.\",q);",
+    "DumpSite.appendCrusherFifoObservation": "if(!acceptsOre || siteId!=0) throw new IllegalStateException(\"FIFO observation expects crusher 0\");\nif(crusherFifo.size()>16) throw new IllegalStateException(\"FIFO observation overflow; do not truncate batches\");\nint i=0;\ndouble sum=0;\nfor(double[] b:crusherFifo) {\n    if(b==null || b.length!=2 || b[0]<0 || b[1]<0 || b[1]>1)\n        throw new IllegalStateException(\"Invalid FIFO batch\");\n    w.add(\"fifo.\"+i+\".valid\",1);\n    w.add(\"fifo.\"+i+\".tons\",b[0]/500.0);\n    w.add(\"fifo.\"+i+\".grade\",b[1]);\n    sum+=b[0]; i++;\n}\nif(Math.abs(sum-crusherStoredTons)>1e-5) throw new IllegalStateException(\"FIFO observation mass mismatch\");\nfor(;i<16;i++) {\n    w.add(\"fifo.\"+i+\".valid\",0);\n    w.add(\"fifo.\"+i+\".tons\",0);\n    w.add(\"fifo.\"+i+\".grade\",0);\n}",
+    "LoadSite.getAvailableTons": "if (!available) return 0.0;\nreturn Math.max(0.0, remainingTons - reservedTons);",
+    "LoadSite.reserveLoad": "if (t == null\n    || t.isLoaded\n    || t.plannedPayloadTons > 1e-6\n    || t.incomingLoadSiteId != -1\n    || !Double.isFinite(t.capacity)\n    || t.capacity <= 0.0) {\n\n    throw new IllegalArgumentException(\n        \"Invalid reservation request at \" + siteName\n    );\n}\n\ndouble tons = Math.min(t.capacity, getAvailableTons());\n\nif (tons <= 1e-6) {\n    throw new IllegalStateException(\n        \"No unreserved material at \" + siteName\n    );\n}\n\nreservedTons += tons;\nincomingTrucks++;\n\nreturn tons;",
+    "LoadSite.obsGradeStats": "if(tons<=0.0) return new double[]{0.0,0.0,0.0};\nif(!isOre || main.deterministicCheck) return new double[]{isOre?grade:0.0,0.0,1.0};\ndouble end=start+tons, metalMean=0.0, metalVariance=0.0;\nboolean allKnown=true;\nfor(double cursor=start;cursor<end-1e-9;) {\n    int k=(int)Math.floor(cursor/gradeBlockTons);\n    double stop=Math.min(end,(k+1.0)*gradeBlockTons), q=stop-cursor;\n    Double known=obsKnownGrades.get(k);\n    if(known!=null) metalMean+=q*known;\n    else {\n        // Current ore means are well inside [0,1], so no clipping mass occurs.\n        if(grade-gradeHalfRange<0 || grade+gradeHalfRange>1)\n            throw new IllegalStateException(\"Re-derive grade prior after changing bounds\");\n        metalMean+=q*grade;\n        metalVariance+=q*q*gradeHalfRange*gradeHalfRange/3.0;\n        allKnown=false;\n    }\n    cursor=stop;\n}\nreturn new double[]{metalMean/tons,Math.sqrt(metalVariance)/tons,allKnown?1.0:0.0};",
+    "LoadSite.appendDispatchObservation": "String p=\"load.\"+siteId+\".\";\nw.add(p+\"available\",available?1:0);\nw.add(p+\"isOre\",isOre?1:0);\nw.add(p+\"meanGrade\",grade);\nw.add(p+\"gradeHalfRange\",main.deterministicCheck?0:gradeHalfRange);\nw.add(p+\"initialTons\",initialReserveTons/30000.0);\nw.add(p+\"remainingTons\",remainingTons/30000.0);\nw.add(p+\"reservedTons\",reservedTons/30000.0);\nw.add(p+\"availableTons\",getAvailableTons()/30000.0);\nw.add(p+\"producedTons\",producedTons/30000.0);\nw.add(p+\"allocationCursor\",extractionCursorTons/30000.0);\nw.add(p+\"blockTons\",gradeBlockTons/500.0);\ndouble inBlock=extractionCursorTons-Math.floor(extractionCursorTons/gradeBlockTons)*gradeBlockTons;\nw.add(p+\"cursorFraction\",inBlock/gradeBlockTons);\nw.add(p+\"lastKnownBlock\",obsLastKnownBlock<0?0:(obsLastKnownBlock+1.0)/60.0);\nw.add(p+\"lastKnownGrade\",obsLastKnownBlock<0?0:obsLastKnownGrade);\nw.add(p+\"shovelCapacity\",shovelCapacity);\nw.add(p+\"shovelBusy\",shovelResource.busy());\nw.add(p+\"loadingCount\",numInService);\nw.add(p+\"incomingCount\",incomingTrucks/9.0);\nw.add(p+\"bucketTons\",Math.min(30.0,bucket*density*0.90)/30.0);\nw.add(p+\"singleServeMin\",singleServeTime);\njava.util.ArrayList<Truck> q=new java.util.ArrayList<Truck>();\nfor(int i=0;i<queueLoad.size();i++) q.add((Truck)queueLoad.get(i));\nw.truckSlots(p+\"queue.\",q);\nq.clear();\nfor(int i=0;i<seize.size();i++) q.add((Truck)seize.get(i));\nw.truckSlots(p+\"seize.\",q);\nq.clear();\nfor(int i=0;i<delay.size();i++) q.add((Truck)delay.get(i));\njava.util.Collections.sort(q,(a,b)->Integer.compare(a.truckId,b.truckId));\nw.truckSlots(p+\"service.\",q);",
+    "JavaClass.RLClient": "//Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).\nimport DRL.grpc.DispatchRequest;\nimport DRL.grpc.DispatchResponse;\nimport DRL.grpc.DispatchServiceGrpc;\nimport io.grpc.ConnectivityState;\nimport io.grpc.ManagedChannel;\nimport io.grpc.ManagedChannelBuilder;\nimport io.grpc.StatusRuntimeException;\nimport java.util.concurrent.TimeUnit;\n\npublic class RLClient {\nprivate final ManagedChannel channel;\nprivate final DispatchServiceGrpc.DispatchServiceBlockingStub blockingStub;\nprivate final long timeoutMs;\n\npublic RLClient(String var1, int var2, long var3) {\n   this.channel = ManagedChannelBuilder.forAddress(var1, var2).usePlaintext().build();\n   this.blockingStub = DispatchServiceGrpc.newBlockingStub(this.channel);\n   this.timeoutMs = var3;\n}\n\npublic DispatchResponse getDispatchResult(\n\t    DispatchRequest request\n\t) throws StatusRuntimeException {\n\n\t    if (request == null || !request.hasObs()) {\n\t        throw new IllegalArgumentException(\"request.obs is required\");\n\t    }\n\n\t    DispatchResponse response =\n\t        blockingStub\n\t            .withDeadlineAfter(timeoutMs, TimeUnit.MILLISECONDS)\n\t            .getNextDestination(request);\n\n\t    if (!request.getEpisodeId().equals(response.getEpisodeId())) {\n\t        throw new IllegalStateException(\"episode_id mismatch\");\n\t    }\n\n\t    if (\n\t        request.getDecisionSequence()\n\t        != response.getDecisionSequence()\n\t    ) {\n\t        throw new IllegalStateException(\n\t            \"decision_sequence mismatch\"\n\t        );\n\t    }\n\n\t    if (request.getActionRequired()) {\n\t        if (!response.getHasAction()) {\n\t            throw new IllegalStateException(\n\t                \"Action required but response has no action\"\n\t            );\n\t        }\n\n\t        int action = response.getAction();\n\t        if (action < 0 || action > 3) {\n\t            throw new IllegalStateException(\n\t                \"Invalid action: \" + action\n\t            );\n\t        }\n\t    }\n\n\t    return response;\n\t}\n\npublic int getNextDestination(DispatchRequest var1) throws StatusRuntimeException {\n   return this.getDispatchResult(var1).getAction();\n}\n\npublic boolean isReady() {\n   ConnectivityState var1 = this.channel.getState(true);\n   return !this.channel.isShutdown() && !this.channel.isTerminated() && var1 != ConnectivityState.SHUTDOWN;\n}\n\npublic void shutdown() {\n   this.channel.shutdown();\n\n   try {\n      if (!this.channel.awaitTermination(5L, TimeUnit.SECONDS)) {\n         this.channel.shutdownNow();\n      }\n   } catch (InterruptedException var2) {\n      this.channel.shutdownNow();\n      Thread.currentThread().interrupt();\n   }\n\n}\n}\n",
+    "JavaClass.PathSegment": " import fusion.Main;\n\npublic class PathSegment {\n    public Main main;\n    public String key;\n    public String physicalKey;\n    public String from;\n    public String to;\n    public String positiveFrom;\n    public String positiveTo;\n    public double length;\n    public int direction;\n    public String directionName;\n    public double speedLimit;\n    public boolean closed;\n\n    // 唯一构造函数，包含所有参数\n    public PathSegment(\n        Main main,\n        String from,\n        String to,\n        String positiveFrom,\n        String positiveTo,\n        double speedLimit\n    ) {\n        this.main = main;\n        this.from = from;\n        this.to = to;\n        this.positiveFrom = positiveFrom;\n        this.positiveTo = positiveTo;\n        this.speedLimit = speedLimit;\n        this.closed = false;\n        \n        this.key = from + \"_\" + to;\n        this.physicalKey = makePhysicalKey(positiveFrom, positiveTo);\n\n        if (from.equals(positiveFrom) && to.equals(positiveTo)) {\n            this.direction = 1;\n            this.directionName = \"TO_LOAD\";\n        } else {\n            this.direction = -1;\n            this.directionName = \"TO_DUMP\";\n        }\n        calculateLength();\n\n    }\n\n    public String makePhysicalKey(String a, String b) {\n        return a + \"__\" + b;\n    }\n\n    public void calculateLength() {\n        if (main != null) {\n            this.length = main.getNodesPosition(\n                main.getRoadPointNode(this.positiveFrom),\n                main.getRoadPointNode(this.positiveTo)\n            );\n        } else {\n            traceln(\"警告：main 为 null，无法计算长度\");\n            this.length = 0;\n        }\n    }\n    // =========================\n    // Lane / direction utilities\n    // =========================\n\n    public String getLaneKey() {\n        return physicalKey + \"_\" + direction;\n    }\n\n    public boolean isSamePhysicalSegment(PathSegment other) {\n        if (other == null) {\n            return false;\n        }\n\n        if (this.physicalKey == null || other.physicalKey == null) {\n            return false;\n        }\n\n        return this.physicalKey.equals(other.physicalKey);\n    }\n\n    public boolean isSameDirectedSegment(PathSegment other) {\n        if (other == null) {\n            return false;\n        }\n\n        if (!isSamePhysicalSegment(other)) {\n            return false;\n        }\n\n        return this.direction == other.direction;\n    }\n\n    public boolean isSameLane(PathSegment other) {\n        return isSameDirectedSegment(other);\n    }\n\n    /**\n     * Convert remaining distance to the next node/intersection into directed progress\n     * on this segment.\n     *\n     * Assumption:\n     *   disToInt means the remaining distance from the truck to the downstream node\n     *   along this segment's current driving direction.\n     *\n     * Then:\n     *   progress = length - disToInt\n     *\n     * Larger progress means the truck is further ahead on this directed segment.\n     */\n    public double calcProgressFromRemainingDistance(double disToInt) {\n        if (Double.isNaN(disToInt) || Double.isInfinite(disToInt)) {\n            return 0;\n        }\n\n        double progress = length - disToInt;\n\n        if (progress < 0) {\n            progress = 0;\n        }\n\n        if (progress > length) {\n            progress = length;\n        }\n\n        return progress;\n    }\n\n    /**\n     * Returns progress difference from ego to other:\n     *\n     *   gap > 0  : other is ahead of ego\n     *   gap < 0  : other is behind ego\n     *   NaN      : not on the same directed segment\n     */\n    public double calcProgressGap(\n        double egoDisToInt,\n        PathSegment otherSegment,\n        double otherDisToInt\n    ) {\n        if (!isSameDirectedSegment(otherSegment)) {\n            return Double.NaN;\n        }\n\n        double egoProgress = calcProgressFromRemainingDistance(egoDisToInt);\n        double otherProgress = otherSegment.calcProgressFromRemainingDistance(otherDisToInt);\n\n        return otherProgress - egoProgress;\n    }\n\n    public boolean isAhead(\n        double egoDisToInt,\n        PathSegment otherSegment,\n        double otherDisToInt\n    ) {\n        double gap = calcProgressGap(egoDisToInt, otherSegment, otherDisToInt);\n\n        if (Double.isNaN(gap)) {\n            return false;\n        }\n\n        return gap > 0;\n    }\n\n    public boolean isBehind(\n        double egoDisToInt,\n        PathSegment otherSegment,\n        double otherDisToInt\n    ) {\n        double gap = calcProgressGap(egoDisToInt, otherSegment, otherDisToInt);\n\n        if (Double.isNaN(gap)) {\n            return false;\n        }\n\n        return gap < 0;\n    }\n    public static double calcRouteProgress(\n    \t    java.util.ArrayList<PathSegment> routeSegments,\n    \t    PathSegment currentSegment,\n    \t    double disToInt\n    \t) {\n    \t    if (routeSegments == null || currentSegment == null) {\n    \t        return 0;\n    \t    }\n\n    \t    double progress = 0;\n\n    \t    for (PathSegment seg : routeSegments) {\n\n    \t        if (seg == null) {\n    \t            continue;\n    \t        }\n\n    \t        boolean isCurrent = false;\n\n    \t        if (seg.key != null && currentSegment.key != null) {\n    \t            isCurrent = seg.key.equals(currentSegment.key);\n    \t        } else if (seg.physicalKey != null && currentSegment.physicalKey != null) {\n    \t            isCurrent =\n    \t                seg.physicalKey.equals(currentSegment.physicalKey)\n    \t                && seg.direction == currentSegment.direction;\n    \t        }\n\n    \t        if (isCurrent) {\n    \t            progress += currentSegment.calcProgressFromRemainingDistance(disToInt);\n    \t            return progress;\n    \t        } else {\n    \t            progress += seg.length;\n    \t        }\n    \t    }\n\n    \t    return progress;\n    \t}\n    public String getDirectedFrom() {\n        return from;\n    }\n\n    public String getDirectedTo() {\n        return to;\n    }\n}",
+    "JavaClass.DispatchObsWriter": "public class DispatchObsWriter {\n    public final java.util.ArrayList<Double> values = new java.util.ArrayList<Double>();\n    public final java.util.ArrayList<String> names = new java.util.ArrayList<String>();\n    private final java.util.HashSet<String> used = new java.util.HashSet<String>();\n    public void add(String name, double value) {\n        if (!Double.isFinite(value) || !Float.isFinite((float)value))\n            throw new IllegalStateException(\"Invalid observation: \" + name + \"=\" + value);\n        if (!used.add(name)) throw new IllegalStateException(\"Duplicate observation: \" + name);\n        names.add(name);\n        values.add(value);\n    }\n    public void oneHot(String prefix, int selected, int count) {\n        if (selected < -1 || selected >= count) throw new IllegalStateException(\"Invalid category: \" + prefix);\n        for (int i=0; i<count; i++) add(prefix + i, selected == i ? 1.0 : 0.0);\n    }\n    public void truckSlots(String prefix, java.util.List<Truck> list) {\n        if (list.size() > 9) throw new IllegalStateException(\"Queue overflow: \" + prefix);\n        java.util.HashSet<Truck> seen = new java.util.HashSet<Truck>();\n        for (Truck t : list) {\n            if (t == null || t.truckId < 0 || t.truckId >= 9 || !seen.add(t))\n                throw new IllegalStateException(\"Invalid queue: \" + prefix);\n        }\n        for (int i=0; i<9; i++) add(prefix+i, i<list.size() ? (list.get(i).truckId+1.0)/9.0 : 0.0);\n    }\n    public String schemaCsv() {\n        StringBuilder b = new StringBuilder(\"index,name\\n\");\n        for (int i=0; i<names.size(); i++) b.append(i).append(',').append(names.get(i)).append('\\n');\n        return b.toString();\n    }\n}"
+  },
+  "main_variables": {
+    "crusherOreTons": {
+      "id": "1776756909131",
+      "value": null
+    },
+    "crusherMetalTons": {
+      "id": "1776756914331",
+      "value": null
+    },
+    "currentFeedGrade": {
+      "id": "1776756921218",
+      "value": null
+    },
+    "gradeGap": {
+      "id": "1776756927963",
+      "value": null
+    },
+    "totalProduction": {
+      "id": "1776756935763",
+      "value": null
+    },
+    "totalWaitTime": {
+      "id": "1776756941091",
+      "value": null
+    },
+    "totalTravelTime": {
+      "id": "1776757008084",
+      "value": null
+    },
+    "completedTrips": {
+      "id": "1776757039980",
+      "value": null
+    },
+    "tParkingToOre": {
+      "id": "1776757216944",
+      "value": null
+    },
+    "tParkingToWaste": {
+      "id": "1776757226328",
+      "value": null
+    },
+    "tOreToCrusher": {
+      "id": "1776757232712",
+      "value": null
+    },
+    "tWasteToDump": {
+      "id": "1776757237617",
+      "value": null
+    },
+    "tCrusherToOre": {
+      "id": "1776757254689",
+      "value": null
+    },
+    "tCrusherToWaste": {
+      "id": "1776757258041",
+      "value": null
+    },
+    "tDumpToOre": {
+      "id": "1776757265144",
+      "value": null
+    },
+    "tDumpToWaste": {
+      "id": "1776757271016",
+      "value": null
+    },
+    "totalWasteMoved": {
+      "id": "1776757986399",
+      "value": null
+    },
+    "totalCycleTime": {
+      "id": "1776757996894",
+      "value": null
+    },
+    "P2LList": {
+      "id": "1776855812136",
+      "value": null
+    },
+    "P2DList": {
+      "id": "1776855860098",
+      "value": null
+    },
+    "L2DList": {
+      "id": "1776855871850",
+      "value": null
+    },
+    "rlClient": {
+      "id": "1776914961988",
+      "value": null
+    },
+    "shiftDuration": {
+      "id": "1776943416091",
+      "value": "480.0"
+    },
+    "progress": {
+      "id": "1776949060828",
+      "value": "0"
+    },
+    "dynamic": {
+      "id": "1780557392518",
+      "value": "false"
+    },
+    "isWarmUp": {
+      "id": "1780630032948",
+      "value": "false"
+    },
+    "segmentMap": {
+      "id": "1782716893333",
+      "value": "new HashMap<>()"
+    },
+    "routeNodeMap": {
+      "id": "1782719492015",
+      "value": "new HashMap<>()"
+    },
+    "roadPointNodeMap": {
+      "id": "1782805233073",
+      "value": "new HashMap<>()"
+    },
+    "speedControlServer": {
+      "id": "1783323283807",
+      "value": null
+    },
+    "speedControlPort": {
+      "id": "1783323350226",
+      "value": "50060"
+    },
+    "dispatchInferenceHost": {
+      "id": "1783768256194",
+      "value": "\"127.0.0.1\""
+    },
+    "dispatchInferencePort": {
+      "id": "1783768307699",
+      "value": "50051"
+    },
+    "dispatchInferenceTimeoutMs": {
+      "id": "1783768324937",
+      "value": "300000"
+    },
+    "enableOnnxDispatch": {
+      "id": "1783770834253",
+      "value": "true"
+    },
+    "enableDispatchFallback": {
+      "id": "1783770843988",
+      "value": "false"
+    },
+    "rawAction": {
+      "id": "1783826861139",
+      "value": null
+    },
+    "executedAction": {
+      "id": "1783826875109",
+      "value": null
+    },
+    "fallbackUsed": {
+      "id": "1783826886204",
+      "value": null
+    },
+    "inferenceLatencyUs": {
+      "id": "1783826894759",
+      "value": null
+    },
+    "frontendStateHttpClient": {
+      "id": "1783842894989",
+      "value": "java.net.http.HttpClient.newBuilder()\n    .connectTimeout(java.time.Duration.ofSeconds(2))\n    .build()"
+    },
+    "totalSystemLoadWaitTime": {
+      "id": "1783912839731",
+      "value": null
+    },
+    "totalSystemDumpWaitTime": {
+      "id": "1783912852164",
+      "value": null
+    },
+    "frontendStateEndpoint": {
+      "id": "1785479884180",
+      "value": "\"http://localhost:8080/api/simulation/state\";"
+    },
+    "frontendSimulationId": {
+      "id": "1785479907141",
+      "value": "\"SIM_\" + System.currentTimeMillis();"
+    },
+    "frontendStateReportInFlight": {
+      "id": "1785479924522",
+      "value": "new java.util.concurrent.atomic.AtomicBoolean(false)"
+    },
+    "hasDispatchResult": {
+      "id": "1785480006296",
+      "value": "false"
+    },
+    "lastDispatchRequestId": {
+      "id": "1785480033791",
+      "value": "\"\""
+    },
+    "lastDispatchTruckId": {
+      "id": "1785480047146",
+      "value": "-1"
+    },
+    "lastDispatchErrorCode": {
+      "id": "1785480065751",
+      "value": "\"NO_DISPATCH\""
+    },
+    "dispatchDecisionSequence": {
+      "id": "1785490297901",
+      "value": null
+    },
+    "lastDecisionId": {
+      "id": "1785490314007",
+      "value": null
+    },
+    "lastDecisionVehicleId": {
+      "id": "1785490323984",
+      "value": "\"\""
+    },
+    "lastDecisionRawAction": {
+      "id": "1785490352483",
+      "value": null
+    },
+    "lastDecisionExecutedAction": {
+      "id": "1785490364061",
+      "value": "-1"
+    },
+    "lastDecisionTargetId": {
+      "id": "1785490379503",
+      "value": "\"\""
+    },
+    "lastDecisionFallback": {
+      "id": "1785490398859",
+      "value": "false"
+    },
+    "lastDecisionLatencyUs": {
+      "id": "1785490412844",
+      "value": null
+    },
+    "lastDecisionModel": {
+      "id": "1785490429917",
+      "value": "\"PPO-v13\""
+    },
+    "layoutEntities": {
+      "id": "1785649689860",
+      "value": "new ArrayList<>()"
+    },
+    "lastDecisionValue": {
+      "id": "1785655535818",
+      "value": null
+    },
+    "lastDecisionLogits": {
+      "id": "1785655629662",
+      "value": "new ArrayList<>()"
+    },
+    "loadedBaseSpeedMps": {
+      "id": "1789528457116",
+      "value": "new HashMap<>()"
+    },
+    "emptyBaseSpeedMps": {
+      "id": "1789528459429",
+      "value": "new HashMap<String, Double>()"
+    },
+    "nextLaneEntrySeq": {
+      "id": "1789612610573",
+      "value": null
+    },
+    "episodeId": {
+      "id": "1790406046153",
+      "value": "\"\""
+    },
+    "decisionSequence": {
+      "id": "1790406066402",
+      "value": null
+    },
+    "episodeStarted": {
+      "id": "1790406077676",
+      "value": "false"
+    },
+    "episodeClosed": {
+      "id": "1790406088843",
+      "value": "false"
+    },
+    "previousAction": {
+      "id": "1790406103350",
+      "value": "-1"
+    },
+    "lastDecisionTimeSec": {
+      "id": "1790406117089",
+      "value": null
+    },
+    "lastWaitVehicleSeconds": {
+      "id": "1790406130792",
+      "value": null
+    },
+    "rlShiftSeconds": {
+      "id": "1790406141343",
+      "value": "28800.0"
+    },
+    "rlWindowSeconds": {
+      "id": "1790406150305",
+      "value": "7200.0"
+    },
+    "waitRefSeconds": {
+      "id": "1790406162748",
+      "value": "200"
+    },
+    "targetOreTons2h": {
+      "id": "1790406174953",
+      "value": "4000"
+    },
+    "targetOreTonsShift": {
+      "id": "1790406183820",
+      "value": "16000"
+    },
+    "wGrade2h": {
+      "id": "1790406195665",
+      "value": "1.0"
+    },
+    "wGradeShift": {
+      "id": "1790406210939",
+      "value": "6"
+    },
+    "wProduction": {
+      "id": "1790406219972",
+      "value": "4"
+    },
+    "currentWindowIndex": {
+      "id": "1790406237447",
+      "value": null
+    },
+    "windowOreTons": {
+      "id": "1790406248420",
+      "value": null
+    },
+    "windowMetalTons": {
+      "id": "1790406263093",
+      "value": null
+    },
+    "pendingGrade2hReward": {
+      "id": "1790406272739",
+      "value": null
+    },
+    "pendingGradeShiftReward": {
+      "id": "1790406281469",
+      "value": null
+    },
+    "pendingProductionReward": {
+      "id": "1790406289182",
+      "value": null
+    },
+    "closedWindowGrades": {
+      "id": "1790406299789",
+      "value": "new double[4]"
+    },
+    "closedWindowGradeGaps": {
+      "id": "1790406320317",
+      "value": "new double[4]"
+    },
+    "lastDispatchObservation": {
+      "id": "1790408115147",
+      "value": "null"
+    },
+    "wWait": {
+      "id": "1790420807463",
+      "value": "1.0"
+    },
+    "wGradeAction": {
+      "id": "1790420834697",
+      "value": "0.15"
+    },
+    "gradePriorTons": {
+      "id": "1790420913388",
+      "value": "20000"
+    },
+    "gradeActionDeltaClip": {
+      "id": "1790420931587",
+      "value": "0.10"
+    },
+    "pendingGradeActionReward": {
+      "id": "1790421096922",
+      "value": "0.0"
+    },
+    "wWasteLag": {
+      "id": "1790422096277",
+      "value": "0.02"
+    },
+    "productionLagTolerance": {
+      "id": "1790422107536",
+      "value": "0.05"
+    },
+    "closedWindowOreTons": {
+      "id": "1790490724918",
+      "value": "new double[4]"
+    },
+    "rewardContractId": {
+      "id": "1791513434850",
+      "value": "\"dispatch-reward-physical-v3\""
+    },
+    "pendingClosedWindows": {
+      "id": "1791514553646",
+      "value": "new java.util.ArrayList<WindowSummary>()"
+    },
+    "ruleEvalLogStarted": {
+      "id": "1791803144339",
+      "value": "false"
+    },
+    "gradeLowerBound": {
+      "id": "1792411741383",
+      "value": "0.26"
+    },
+    "gradeUpperBound": {
+      "id": "1792411753002",
+      "value": "0.28\n"
+    },
+    "targetWasteTonsShift": {
+      "id": "1792411783408",
+      "value": "4000"
+    },
+    "closedWindowMetalTons": {
+      "id": "1792496657635",
+      "value": "new double[4]"
+    },
+    "enableMaterialAudit": {
+      "id": "1792496680908",
+      "value": "true"
+    },
+    "materialAuditReady": {
+      "id": "1792496697288",
+      "value": "false"
+    },
+    "materialAuditChecks": {
+      "id": "1792496708658",
+      "value": "0L"
+    },
+    "obsDryRun": {
+      "id": "1792577948784",
+      "value": "true"
+    },
+    "obsReady": {
+      "id": "1792577960231",
+      "value": "false"
+    },
+    "obsTraceCount": {
+      "id": "1792577972277",
+      "value": "0L"
+    },
+    "obsSchemaNames": {
+      "id": "1792577989915",
+      "value": "new java.util.ArrayList<String>()"
+    },
+    "obsSegmentKeys": {
+      "id": "1792578011257",
+      "value": "new java.util.ArrayList<String>()"
+    },
+    "obsNodeNames": {
+      "id": "1792578024797",
+      "value": "new String[] {\"Crusher\", \"dumpNode\", \"intersection1\", \"intersection2\", \"intersection3\", \"ShovelOreHigh1\", \"ShovelOreHigh2\", \"ShovelOreLow\", \"ShovelWaste\"}"
+    },
+    "numTrucks": {
+      "id": "1776757906246",
+      "value": "9"
+    },
+    "truckCapacity": {
+      "id": "1776757924239",
+      "value": "220"
+    },
+    "targetGrade": {
+      "id": "1776757930264",
+      "value": "0.27"
+    },
+    "warmUpTime": {
+      "id": "1780630090839",
+      "value": "0"
+    },
+    "useLocalDynamicSpeed": {
+      "id": "1789527943204",
+      "value": "true"
+    },
+    "speedDtSec": {
+      "id": "1789527945426",
+      "value": "0.2"
+    },
+    "safeGapM": {
+      "id": "1789527949493",
+      "value": "50"
+    },
+    "followRangeM": {
+      "id": "1789527951500",
+      "value": "70"
+    },
+    "speedTauSec": {
+      "id": "1789528060107",
+      "value": "1.8"
+    },
+    "maxAccelMps2": {
+      "id": "1789528100825",
+      "value": "0.4"
+    },
+    "maxDecelMps2": {
+      "id": "1789528108950",
+      "value": "0.8"
+    },
+    "maxJerkMps3": {
+      "id": "1789528116950",
+      "value": "0.4"
+    },
+    "shortGapGain": {
+      "id": "1789528126879",
+      "value": "0.10"
+    },
+    "criticalGapM": {
+      "id": "1789614694283",
+      "value": "15"
+    },
+    "followSpeedMarginMps": {
+      "id": "1789614703963",
+      "value": "0.3"
+    },
+    "followTauSec": {
+      "id": "1789614716915",
+      "value": "1.5"
+    },
+    "brakeTauSec": {
+      "id": "1789614727314",
+      "value": "0.8"
+    },
+    "freeSpeedFactorStd": {
+      "id": "1789643802467",
+      "value": "0.05"
+    },
+    "freeSpeedFactorMin": {
+      "id": "1789643818166",
+      "value": "0.85"
+    },
+    "freeSpeedFactorMax": {
+      "id": "1789643833222",
+      "value": "1.10"
+    },
+    "useEndogenousCongestion": {
+      "id": "1790474843594",
+      "value": "true"
+    },
+    "currentDispatchPolicy": {
+      "id": "1790474918809",
+      "value": "3"
+    },
+    "experimentRunIndex": {
+      "id": "1791514699057",
+      "value": "1"
+    },
+    "experimentSeed": {
+      "id": "1791514725026",
+      "value": "202610090001L"
+    },
+    "deterministicCheck": {
+      "id": "1792579590957",
+      "value": "true"
+    },
+    "usePhysicalObservation": {
+      "id": "1792579635048",
+      "value": "true"
+    },
+    "collectionTrucks": {
+      "id": "1776761132729",
+      "value": null
+    },
+    "collectionLoadSites": {
+      "id": "1776847824804",
+      "value": null
+    },
+    "collectionDumpSites": {
+      "id": "1776847843132",
+      "value": null
+    },
+    "collectionIntersections": {
+      "id": "1782717126840",
+      "value": null
+    }
+  }
+}

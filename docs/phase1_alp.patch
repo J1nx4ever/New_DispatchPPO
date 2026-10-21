@@ -1,0 +1,46 @@
+--- /tmp/phase1_original/DRL-PPO.alp	2026-10-21 19:57:28.979067957 +0800
++++ anylogic/DRL-PPO.alp	2026-10-21 19:58:43.732575503 +0800
+@@ -1588,6 +1588,7 @@
+ 					<ShowLabel>true</ShowLabel>
+ 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+ 						<Type><![CDATA[String]]></Type>        
++					<InitialValue Class="CodeValue"><Code><![CDATA["dispatch-reward-physical-v3"]]></Code></InitialValue>
+ 					</Properties>
+ 				</Variable>
+ 				<Variable Class="PlainVariable">
+@@ -2429,7 +2430,7 @@
+ 						<UnitType><![CDATA[NONE]]></UnitType>
+ 						<SdArray>false</SdArray>
+ 						<DefaultValue Class="CodeValue">
+-							<Code><![CDATA[false]]></Code>
++							<Code><![CDATA[true]]></Code>
+ 						</DefaultValue>
+ 						<ParameterEditor>
+ 							<Id>1792579635046</Id>
+@@ -22802,7 +22803,7 @@
+ 				<InitialDate><![CDATA[1776729600000]]></InitialDate>	
+ 				<InitialTime><![CDATA[0.0]]></InitialTime>	
+ 				<FinalDate><![CDATA[1776730080000]]></FinalDate>	
+-				<FinalTime><![CDATA[480.0]]></FinalTime>	
++				<FinalTime><![CDATA[28800.0]]></FinalTime>	
+ 			</ModelTimeProperties>
+ 			<PresentationProperties>
+ 				<EnableZoomAndPanning>true</EnableZoomAndPanning>
+@@ -23331,7 +23332,7 @@
+ 			<Location>FILE_SYSTEM</Location>
+ 		</Resource>
+ 		<Resource>
+-			<Path><![CDATA[DRL-Dispatching-1.2.0.jar]]></Path>
++			<Path><![CDATA[../dist/DRL-Dispatching-1.2.0.jar]]></Path>
+ 			<ReferencedFromUserCode>false</ReferencedFromUserCode>
+ 			<Location>FILE_SYSTEM</Location>
+ 		</Resource>
+@@ -23701,7 +23702,7 @@
+ 	<ClassPathEntry>
+ 		<ResourceReference>
+ 			<PackageName><![CDATA[fusion]]></PackageName>
+-			<ClassName><![CDATA[DRL-Dispatching-1.2.0.jar]]></ClassName>
++			<ClassName><![CDATA[../dist/DRL-Dispatching-1.2.0.jar]]></ClassName>
+ 		</ResourceReference>
+ 		<Imported>true</Imported>
+ 		<Folder>false</Folder>

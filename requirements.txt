@@ -1,0 +1,12 @@
+# Verified using Python 3.10 in Conda environment anylogic-env.
+# Historical DRL/Python 3.11 pins: docs/phase1_requirements_drl.txt
+stable-baselines3==2.9.0
+numpy==2.2.6
+gymnasium==1.1.1
+torch==2.9.1
+grpcio==1.78.0
+grpcio-tools==1.78.0
+protobuf==6.33.5
+tensorboard==2.21.0
+# Tests used pytest from /tmp; it is not installed into the Conda environment.
+pytest==8.4.2

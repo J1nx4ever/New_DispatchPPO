@@ -1,0 +1,98 @@
+[
+  {
+    "index": 0,
+    "key": "Crusher_intersection1",
+    "from_node": "Crusher",
+    "to_node": "intersection1"
+  },
+  {
+    "index": 1,
+    "key": "ShovelOreHigh1_intersection2",
+    "from_node": "ShovelOreHigh1",
+    "to_node": "intersection2"
+  },
+  {
+    "index": 2,
+    "key": "ShovelOreHigh2_intersection3",
+    "from_node": "ShovelOreHigh2",
+    "to_node": "intersection3"
+  },
+  {
+    "index": 3,
+    "key": "ShovelOreLow_intersection3",
+    "from_node": "ShovelOreLow",
+    "to_node": "intersection3"
+  },
+  {
+    "index": 4,
+    "key": "ShovelWaste_intersection2",
+    "from_node": "ShovelWaste",
+    "to_node": "intersection2"
+  },
+  {
+    "index": 5,
+    "key": "dumpNode_intersection2",
+    "from_node": "dumpNode",
+    "to_node": "intersection2"
+  },
+  {
+    "index": 6,
+    "key": "intersection1_Crusher",
+    "from_node": "intersection1",
+    "to_node": "Crusher"
+  },
+  {
+    "index": 7,
+    "key": "intersection1_intersection2",
+    "from_node": "intersection1",
+    "to_node": "intersection2"
+  },
+  {
+    "index": 8,
+    "key": "intersection2_ShovelOreHigh1",
+    "from_node": "intersection2",
+    "to_node": "ShovelOreHigh1"
+  },
+  {
+    "index": 9,
+    "key": "intersection2_ShovelWaste",
+    "from_node": "intersection2",
+    "to_node": "ShovelWaste"
+  },
+  {
+    "index": 10,
+    "key": "intersection2_dumpNode",
+    "from_node": "intersection2",
+    "to_node": "dumpNode"
+  },
+  {
+    "index": 11,
+    "key": "intersection2_intersection1",
+    "from_node": "intersection2",
+    "to_node": "intersection1"
+  },
+  {
+    "index": 12,
+    "key": "intersection2_intersection3",
+    "from_node": "intersection2",
+    "to_node": "intersection3"
+  },
+  {
+    "index": 13,
+    "key": "intersection3_ShovelOreHigh2",
+    "from_node": "intersection3",
+    "to_node": "ShovelOreHigh2"
+  },
+  {
+    "index": 14,
+    "key": "intersection3_ShovelOreLow",
+    "from_node": "intersection3",
+    "to_node": "ShovelOreLow"
+  },
+  {
+    "index": 15,
+    "key": "intersection3_intersection2",
+    "from_node": "intersection3",
+    "to_node": "intersection2"
+  }
+]

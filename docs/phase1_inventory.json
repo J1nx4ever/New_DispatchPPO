@@ -1,0 +1,1633 @@
+{
+  "files": [
+    {
+      "path": "anylogic/DRL-PPO.alp",
+      "bytes": 828994,
+      "sha256": "446496ad61822ec742fc3434ac13fc023e6f8895c48dbeb80a549254fd48e0dc"
+    },
+    {
+      "path": "python/__init__.py",
+      "bytes": 86,
+      "sha256": "304db09e3a50cb7d1e6b467230bf65e805beb3377d5a0e2f9d9619ba3eb01784"
+    },
+    {
+      "path": "python/__pycache__/__init__.cpython-311.pyc",
+      "bytes": 247,
+      "sha256": "f7cd98f65024f472caa61211a0852db339426fe2fd8846976e19b3d27dabab52"
+    },
+    {
+      "path": "python/__pycache__/alp_audit.cpython-311.pyc",
+      "bytes": 9800,
+      "sha256": "babb9592b08073e453bd0501fac2b8d08e71969f08f0d0d51aaee509caac914d"
+    },
+    {
+      "path": "python/__pycache__/dispatch_bridge.cpython-311.pyc",
+      "bytes": 21530,
+      "sha256": "137a558a118c89f040e1790ac8877eb0238bd23d2ceddbf86ac24dd49df182bb"
+    },
+    {
+      "path": "python/__pycache__/dispatch_env.cpython-311.pyc",
+      "bytes": 9437,
+      "sha256": "cd0d047a8c4734524d8a0d9e6d22be6db655ba2172dada890ddc4acc3c339455"
+    },
+    {
+      "path": "python/__pycache__/dispatch_service.cpython-311.pyc",
+      "bytes": 3252,
+      "sha256": "bab877c4161b5cc17076a6a025dbfe9bd14966ad55221c7078254b1e5b65ec08"
+    },
+    {
+      "path": "python/__pycache__/episode_budget_ppo.cpython-311.pyc",
+      "bytes": 15576,
+      "sha256": "65214574d76b1484539febecce8c305c78219fd42ee688b6163f2816b41580a9"
+    },
+    {
+      "path": "python/__pycache__/episode_runner.cpython-311.pyc",
+      "bytes": 8760,
+      "sha256": "61594fa52f6b83efa5c38f3c66efd851827ea579adec2eb641c56637a62f3b35"
+    },
+    {
+      "path": "python/__pycache__/observation_contract.cpython-311.pyc",
+      "bytes": 8448,
+      "sha256": "af6232766aa55c5d193a33ba30a8ab6e441b901b03922239cc118792b184b090"
+    },
+    {
+      "path": "python/__pycache__/protocol_artifacts.cpython-311.pyc",
+      "bytes": 2471,
+      "sha256": "07d28739959aadb1880f8bedf852cbb1074267254e254b571e8c8f2ade2b82cb"
+    },
+    {
+      "path": "python/__pycache__/reward_contract.cpython-311.pyc",
+      "bytes": 13528,
+      "sha256": "7990c23025960973a450b89910c539c17a1d9d327e0044d4ea450c395910945e"
+    },
+    {
+      "path": "python/__pycache__/rollout_debug.cpython-311.pyc",
+      "bytes": 17216,
+      "sha256": "be5035520af8398d60dfd58012e33bf578f3b1c23ad62dee6c5c004f57475eb8"
+    },
+    {
+      "path": "python/__pycache__/stage_statistics.cpython-311.pyc",
+      "bytes": 13887,
+      "sha256": "5684642c58c9d8637c5af8a7f44c49f3aa821f50cb3b2fc3e35ddf2e3c04b7a9"
+    },
+    {
+      "path": "python/__pycache__/train.cpython-311.pyc",
+      "bytes": 28321,
+      "sha256": "91dd83241a8782c8ac9026c9f882792953e4296440ee3f7f02f11db127e8f9e4"
+    },
+    {
+      "path": "python/alp_audit.py",
+      "bytes": 4711,
+      "sha256": "99ca2fe14813c565e2ffdf298ca78aea22d8225b59f6b869964fc0d99622c11e"
+    },
+    {
+      "path": "python/alp_contract_provenance.json",
+      "bytes": 14016,
+      "sha256": "ab2ad853126cfdf5f770f70a2d2e678af8ee9e6c1ad340e6a07f329614ffbb07"
+    },
+    {
+      "path": "python/dispatch_bridge.py",
+      "bytes": 17632,
+      "sha256": "f865213a519f5467bc331455d751584b145c8e74711ffbd07a7a4aa518ddd49e"
+    },
+    {
+      "path": "python/dispatch_env.py",
+      "bytes": 6226,
+      "sha256": "33484b8372237a4a49f2fa337ffef0bb0bf50f153d35a1d36f843d82da6bc35d"
+    },
+    {
+      "path": "python/dispatch_service.py",
+      "bytes": 1483,
+      "sha256": "2617c79e0bbb3dfe16d8be665eaf6a619909184d4a16d80fd9796a4f68ab07db"
+    },
+    {
+      "path": "python/episode_budget_ppo.py",
+      "bytes": 12740,
+      "sha256": "8e4cfa31c622f5e33756e304eea3f7526547db72ae93f7d9f00808845d61ef96"
+    },
+    {
+      "path": "python/episode_runner.py",
+      "bytes": 5453,
+      "sha256": "2c1139e16a0b967a7ab8302a487ee46bf2c32cac7bd838cafe7be78f352a431f"
+    },
+    {
+      "path": "python/generated/__init__.py",
+      "bytes": 43,
+      "sha256": "22c65d3b1525917f08926f21a0944fa44471b8334895c8a6a3d436d3c9060a0c"
+    },
+    {
+      "path": "python/generated/__pycache__/__init__.cpython-310.pyc",
+      "bytes": 202,
+      "sha256": "cdc9f3ebf3153d86e9049ae3aa19db0a966ebe1aece3413595d49d87127d521d"
+    },
+    {
+      "path": "python/generated/__pycache__/__init__.cpython-311.pyc",
+      "bytes": 214,
+      "sha256": "e551743772f23cbfc5401087f45d30a6da5d35246c209c8ea664bdbfce44eeac"
+    },
+    {
+      "path": "python/generated/__pycache__/dispatch_pb2.cpython-310.pyc",
+      "bytes": 3615,
+      "sha256": "138192216ffe6dd444c8f6fd17d436d789f1ee8f04791d926300ddfcd1f5f1c7"
+    },
+    {
+      "path": "python/generated/__pycache__/dispatch_pb2.cpython-311.pyc",
+      "bytes": 4983,
+      "sha256": "eed08dafdbff239e5a6451ada777167cefa90d5d271661a585f36bca6f2a5d54"
+    },
+    {
+      "path": "python/generated/__pycache__/dispatch_pb2_grpc.cpython-310.pyc",
+      "bytes": 3130,
+      "sha256": "2ec11082208b6b2f7914f757ff2a32e0d67438081a8a94be31d35899cbbfbd40"
+    },
+    {
+      "path": "python/generated/__pycache__/dispatch_pb2_grpc.cpython-311.pyc",
+      "bytes": 4521,
+      "sha256": "971559e26d10d3145137dd7fcf8030ecd82298f32696d5378ce6a19550aea0fd"
+    },
+    {
+      "path": "python/generated/dispatch_pb2.py",
+      "bytes": 6271,
+      "sha256": "6d16f30a3df76267e42f509350f5e6ec1438e45ef9e16ae25508b408a6946742"
+    },
+    {
+      "path": "python/generated/dispatch_pb2_grpc.py",
+      "bytes": 3525,
+      "sha256": "c97ae99e82932fe28003a6e9008efe1f3c71f3fe6c4c82b78c61412e42f86cbe"
+    },
+    {
+      "path": "python/observation_contract.py",
+      "bytes": 4207,
+      "sha256": "0c770c15c6d9eacfad2ceea39858f98c0c597a9e1eba7fd0f4d25a7ea370a7ba"
+    },
+    {
+      "path": "python/observation_schema.json",
+      "bytes": 472866,
+      "sha256": "01d0f9af3c417229ef7f77f194b2d4b145b33452b2dfff98b6cb5cc255efd753"
+    },
+    {
+      "path": "python/protocol_artifacts.py",
+      "bytes": 1268,
+      "sha256": "76126f398cf0ae0d03ecb4649550fb8ad43239e93927a5a2c1466b9e2211a1b0"
+    },
+    {
+      "path": "python/reward_contract.py",
+      "bytes": 9382,
+      "sha256": "79798c0221e030db76093f3d4dc395465aa21365fdf8565168a47b173795a9fd"
+    },
+    {
+      "path": "python/rollout_debug.py",
+      "bytes": 9445,
+      "sha256": "5c9fd31bab36c8b74f6117f2385b315f2ef9debc8bd29d7c1fb531f58697fc65"
+    },
+    {
+      "path": "python/stage_statistics.py",
+      "bytes": 7752,
+      "sha256": "4fbaf9b657070f06fb7cb520f331a480d31c71bda55bcc9bfcb8f82ce5506e96"
+    },
+    {
+      "path": "python/train.py",
+      "bytes": 19572,
+      "sha256": "a2ead5c12bbd6a4f5438ed402e4560a5b7b0b3a8aedb2ca7ed45c4ad144e976e"
+    },
+    {
+      "path": "proto/dispatch.proto",
+      "bytes": 3099,
+      "sha256": "94ffeccac28a7b77ad399e03dde718f748ae218b12e92ade1ee8fc1bc7811504"
+    },
+    {
+      "path": "proto-src/pom.xml",
+      "bytes": 3257,
+      "sha256": "08e1a0baff76989825c568dbd5f617433866b729203f9dfa872e18b4b49f578a"
+    },
+    {
+      "path": "proto-src/src/main/proto/dispatch.proto",
+      "bytes": 3099,
+      "sha256": "94ffeccac28a7b77ad399e03dde718f748ae218b12e92ade1ee8fc1bc7811504"
+    },
+    {
+      "path": "proto-src/target/DRL-Dispatching-1.2.0.jar",
+      "bytes": 124098,
+      "sha256": "7fe4d7dc6db1fc0705d1ad2c9170133d3df15d42696ed86ecb63269316af2218"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchKind$1.class",
+      "bytes": 964,
+      "sha256": "704a2a5b03350e92ef27a566e6700ecc090f97c5f27cb563908702ed6942c257"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchKind.class",
+      "bytes": 4208,
+      "sha256": "6f4dbcbbe828b585cba38270054e9bd80435b2e6d179ede38516e5b952f1880e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchProto.class",
+      "bytes": 6691,
+      "sha256": "047a64399b30a8100b1cfd74eab51b53ec3ed2a79101967953de72288445c227"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchRequest$1.class",
+      "bytes": 2282,
+      "sha256": "0a0dd55acef801c326554a40520c5ba29e1a2075a4bde0e124f6c029d98dff5b"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchRequest$Builder.class",
+      "bytes": 36975,
+      "sha256": "eba4a476f47897bdc9aa23d06e0a924a4c95b42299bfbf2ff50aedd0943cece9"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchRequest$RewardComponentsDefaultEntryHolder.class",
+      "bytes": 1503,
+      "sha256": "f48eb21ea68a8e7c179758e5a3a403336ac436a8bbf30df9087799e0431c4368"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchRequest.class",
+      "bytes": 22789,
+      "sha256": "e3d317ab2f3414738e903d9367e6a35da28c38ea9d8187c188bd59b12bfe30a9"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchRequestOrBuilder.class",
+      "bytes": 1778,
+      "sha256": "5fddc3f553b8e1a0a3417d6266bc816847e30891988eec22b9c277f12e723d79"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchResponse$1.class",
+      "bytes": 2293,
+      "sha256": "99aebde359e16fd3e94144ca4d60398103fee4646a9ab48062d60829ae61df02"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchResponse$Builder.class",
+      "bytes": 18641,
+      "sha256": "512c7e263016dafcf09ae6a14044cacc1b6ecff530858f9430bb8e5d81519b25"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchResponse.class",
+      "bytes": 14307,
+      "sha256": "2c63c159798c075881531b7314e1561e874b80c8e5dc426ebc16d175e8cdc411"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchResponseOrBuilder.class",
+      "bytes": 592,
+      "sha256": "91418134df9a3c6072b9b8c5cb39a5bc0046a2f1a6ca557f27d924e041e373c3"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$1.class",
+      "bytes": 1295,
+      "sha256": "21f897049216655bfc2a83170f26611ed70d02e31bd22ec359b7fb5e7f219694"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$2.class",
+      "bytes": 1353,
+      "sha256": "bd1bea60f87774f7c7372f521f08e5d471c027feeb0eb18150bc5b0d18da8999"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$3.class",
+      "bytes": 1341,
+      "sha256": "03f5162e854006f187f5511f3269075541d2aca512cdae49d52db668ff942890"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$AsyncService.class",
+      "bytes": 1015,
+      "sha256": "9235d7204354083de7664c49bae946d16807d36e8e90e97c1dc38d3c0771259e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceBaseDescriptorSupplier.class",
+      "bytes": 1271,
+      "sha256": "ae95632f2bb28d515a2138654a6d00ffbc2a4efd48edb3f87d12c98db57fb674"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceBlockingStub.class",
+      "bytes": 1690,
+      "sha256": "2528a4b7c58a49bc6e3c7e214a4a68c4475dfc2506f8127712b66c6624feb7fd"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceFileDescriptorSupplier.class",
+      "bytes": 598,
+      "sha256": "6b8bbebe9b4f6da4228a3f1b6e337ef43356e4e3c39604089ad2653703fafab2"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceFutureStub.class",
+      "bytes": 1891,
+      "sha256": "f1b37230b4079b5b4e60b0efcdb4c78a06765fa0b1eca4c542d862ae92318733"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceImplBase.class",
+      "bytes": 765,
+      "sha256": "07b929c31bea2d83706e1d5bc3b11bfb2c36efcd6a016cf6f40adc8072e40ff8"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceMethodDescriptorSupplier.class",
+      "bytes": 1294,
+      "sha256": "941a25bd1de219add3e2dd37d4d1e8c4b28f0564ce7dff75dd45e1070e2882c7"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$DispatchServiceStub.class",
+      "bytes": 1962,
+      "sha256": "2f8c1cf0de3fc3ad99578a1b3c882d9ee79d80770fc6cd340ce18c6078495e5b"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc$MethodHandlers.class",
+      "bytes": 2370,
+      "sha256": "e6382153acdfe0da4259077cd8be0756deba915a589f2a119721e73d715ad5c8"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DispatchServiceGrpc.class",
+      "bytes": 6477,
+      "sha256": "0990ecc876501a16564addd087a47a80a02b30a8333168136f86e702d26cf535"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DumpSiteState$1.class",
+      "bytes": 2260,
+      "sha256": "778c37c0087d10c062d7855acd5fef93a311de45942628cfe2e16e9da980cbb2"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DumpSiteState$Builder.class",
+      "bytes": 13124,
+      "sha256": "0909778bd859c44f9c9ed921c1d82b1ce0ae64298710409efb6519ff3d1bc4a7"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DumpSiteState.class",
+      "bytes": 10075,
+      "sha256": "9f7a5ab64a22e87e7d2c4946ac67ee2d12fad54c8b37f845f40a6bb2665cfa78"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/DumpSiteStateOrBuilder.class",
+      "bytes": 255,
+      "sha256": "1eb9f39895aa8cdbe316c171caca4a968023a20177a9d322b46556ca4c67ddcf"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/EgoTruckState$1.class",
+      "bytes": 2260,
+      "sha256": "1ac87df26a6e8188b5b48695906871b6a84be8438cf2fd0e9df04ba8ab1c7674"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/EgoTruckState$Builder.class",
+      "bytes": 12244,
+      "sha256": "ec2a5697b599ff3c04e5a46b687e221139d63a703787558a5c111507fc8b26d0"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/EgoTruckState.class",
+      "bytes": 9523,
+      "sha256": "af6c6b4d6e8a8b2c80dd3410311606160b86f6dee98625102266d0fe00a12c5e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/EgoTruckStateOrBuilder.class",
+      "bytes": 215,
+      "sha256": "1657b33cdc62d7a9a80467097c4a1d08d7244542f5b7b238fecce893e9da943c"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/GlobalState$1.class",
+      "bytes": 2238,
+      "sha256": "b3cc93a8f96178a1219aa8399fa85d36d5087535174a89c6fbe6ceae0079f643"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/GlobalState$Builder.class",
+      "bytes": 13580,
+      "sha256": "2f091dadad606b9968fb1ec2d59942b2b5c31abc6086eacf31e7af70cc6d912b"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/GlobalState.class",
+      "bytes": 10649,
+      "sha256": "f629bbb19d5a93a902942817ad06146e475b4572732a43fc24a45d2d1b3f373e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/GlobalStateOrBuilder.class",
+      "bytes": 281,
+      "sha256": "967999f0c1f8971217efbf7a3471a73c928d5b4c7a84495371747d74f399f1f5"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/LoadSiteState$1.class",
+      "bytes": 2260,
+      "sha256": "e1a1a6438d73ce2a55b05401a22d2a3e3ed8a8550d15d8f6ba7c7059a372316f"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/LoadSiteState$Builder.class",
+      "bytes": 14591,
+      "sha256": "1bc33f907106b5464935ef910aaeaeb4d213b8ad99a911184eefffa7fb148b03"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/LoadSiteState.class",
+      "bytes": 11328,
+      "sha256": "a5ac9a3428358ec33b5830cd22bebb76426c8f19245fe298918fa496f8f69f36"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/LoadSiteStateOrBuilder.class",
+      "bytes": 328,
+      "sha256": "8da7aed076d8d6783b0661e8f044621678b0ef64b7708d52445612f87aee045e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/Observation$1.class",
+      "bytes": 2238,
+      "sha256": "ca5614fda7518514cb07967dbf6b49b83b2637a4b2b79094bf16d4450bc40aac"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/Observation$Builder.class",
+      "bytes": 33327,
+      "sha256": "dd8a9497a02dc296f55a317d928efb2129df968355bc573f3c84e5cb933a1618"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/Observation.class",
+      "bytes": 16329,
+      "sha256": "c4ddd6cdd4b6cd2cfb8f96fed129808b12fc231de3c4a0d03128937b78dcb902"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/ObservationOrBuilder.class",
+      "bytes": 1411,
+      "sha256": "35b16cf0974e000dfd7a6077d644b2a76cdd8c4edbbc27e13527df03b73a9fa3"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/WindowSummary$1.class",
+      "bytes": 2260,
+      "sha256": "019981c7636cb2b6ed29525ffcf5ec398b2e3982b9033dc8b1b2095411955954"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/WindowSummary$Builder.class",
+      "bytes": 17062,
+      "sha256": "ca8f2159bf2e8f3302d1887adced9db02e91ac7a07dd9df8dda2f2c1805a332e"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/WindowSummary.class",
+      "bytes": 13144,
+      "sha256": "d3591593af8cfb747d7bb0fd5fb3a9135e66fc76c69e9b09850f2b2a9c1c45a7"
+    },
+    {
+      "path": "proto-src/target/classes/DRL/grpc/WindowSummaryOrBuilder.class",
+      "bytes": 485,
+      "sha256": "f063d650f709103fbaaea4db3f133bd24fd81ace7ed831c1aae49bba43cd49ed"
+    },
+    {
+      "path": "proto-src/target/classes/dispatch.proto",
+      "bytes": 3099,
+      "sha256": "94ffeccac28a7b77ad399e03dde718f748ae218b12e92ade1ee8fc1bc7811504"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/grpc-java/DRL/grpc/DispatchServiceGrpc.java",
+      "bytes": 11290,
+      "sha256": "22342e252e70c4481fbb1caf1bf0302f0b61e9c30dc414fe697fb36adce0887d"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchKind.java",
+      "bytes": 3659,
+      "sha256": "1d91ccf6cf9af1a2ebac90a34bca8309e99294519af41aab7c7398c40eed392e"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchProto.java",
+      "bytes": 11165,
+      "sha256": "f2727ca7044041eccb6901faa37927a439deba286695f469575693b1627ba9e5"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchRequest.java",
+      "bytes": 82697,
+      "sha256": "9daf08723255634c42ad61467852ff3297406bdbca554914b72143c60d7cbc85"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchRequestOrBuilder.java",
+      "bytes": 5445,
+      "sha256": "6dd8a90ea8c86b12180500d555c95867c029b03323100aa3e39b87ac3c81a4b1"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchResponse.java",
+      "bytes": 32966,
+      "sha256": "3ba50baa8ed2046d16e16f778d74ee684e2fa66a92f5b1850ec9ab038eb039e8"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DispatchResponseOrBuilder.java",
+      "bytes": 1778,
+      "sha256": "ba54ad76adef5f1a3a50b96e040d5673218c3411c484373df2aabf1ec44a7912"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DumpSiteState.java",
+      "bytes": 18536,
+      "sha256": "f6d3d4fd7eb7638446ec19f79cf2367cec54ac784398e5c3a6bad0abe7f0b548"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/DumpSiteStateOrBuilder.java",
+      "bytes": 622,
+      "sha256": "c134cdeed472958c4bcc251ad8f343f873b196271a1647479de6724fbe23e814"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/EgoTruckState.java",
+      "bytes": 15296,
+      "sha256": "5d910ceb01d5a8082dd4f5092c6755af3e0b7569f83fc534800ae48294072dfe"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/EgoTruckStateOrBuilder.java",
+      "bytes": 434,
+      "sha256": "ef261566d90937b656ea5b236ac19c565fef8cab332fb0b3c72b3b8e44d1aeed"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/GlobalState.java",
+      "bytes": 21798,
+      "sha256": "dd306cbc0314c2062cc2bd1c83621472cb11b5828bbfb95f3bcd0d86ce63d8fd"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/GlobalStateOrBuilder.java",
+      "bytes": 758,
+      "sha256": "a4f5096a4bb773615926c342697f3e11005f832a1145e8191a8cd3cd46bca257"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/LoadSiteState.java",
+      "bytes": 24035,
+      "sha256": "cdb0c3242f052733b25cb3b43d69c8fd67ff6315351dca4ee6ddfd096653fa17"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/LoadSiteStateOrBuilder.java",
+      "bytes": 915,
+      "sha256": "29dc614527fea2b84ba302416eb747836371ec3ed8679f7ff6348a148bf6ee36"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/Observation.java",
+      "bytes": 59117,
+      "sha256": "3a1b98c9633a010833e8233cc9814d1b315e2b364d307bf26386f48ea6710a33"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/ObservationOrBuilder.java",
+      "bytes": 3542,
+      "sha256": "16146337f3a75d5803c21b0b95fd6b875101f50a12f1235f81ae37ce0d8e428d"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/WindowSummary.java",
+      "bytes": 36940,
+      "sha256": "6b91be4ce0fd275b5f3b3c42f0922531e52c46f6f0915ec1881a43896a65d846"
+    },
+    {
+      "path": "proto-src/target/generated-sources/protobuf/java/DRL/grpc/WindowSummaryOrBuilder.java",
+      "bytes": 1747,
+      "sha256": "c225c74428e21c294174d0a56f911093415598a749b3274257ffe01b58def7ac"
+    },
+    {
+      "path": "proto-src/target/maven-archiver/pom.properties",
+      "bytes": 61,
+      "sha256": "0e0e174389a9e948e6890b8be9942a06c7abaa19c684a91f9af3a220c8be878a"
+    },
+    {
+      "path": "proto-src/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst",
+      "bytes": 1940,
+      "sha256": "540b2089d2fd1251a957b9265deb535d8514e40b76ffc0970d8195c76ab0bef5"
+    },
+    {
+      "path": "proto-src/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst",
+      "bytes": 2060,
+      "sha256": "58a549f2d158cac621f5ea45666b2c4b9b226677bb12496a4636d2f853da8c81"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/any.proto",
+      "bytes": 6154,
+      "sha256": "bcf5de6ce463b1a38ff76b77955aa7e580b4ec12af34a927b1d45c9efb0faf66"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/api.proto",
+      "bytes": 7728,
+      "sha256": "e1745f7d6e9953f624b027b37da29ffc6521c45bce9aa96f39666748879fc915"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/descriptor.proto",
+      "bytes": 49985,
+      "sha256": "a39cb2a57423cf1e83a00dc7bcca4b1b74bcbebc28e95586977dbc2af636fabc"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/duration.proto",
+      "bytes": 4892,
+      "sha256": "a3f7301ff2956ec2e30c2241ece07197e4a86c752348d5607224819d4921c9fe"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/empty.proto",
+      "bytes": 2363,
+      "sha256": "ecef3d54cc9e079673b9816c67bac770f7f3bf6dada2d4596ba69d71daa971e6"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/field_mask.proto",
+      "bytes": 8185,
+      "sha256": "17b0f342cc3a262e317d56884f3f575afbfac512ad0579349cc7450e41f26891"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/source_context.proto",
+      "bytes": 2341,
+      "sha256": "37d3401de89af1d1496fc949924a5f2011bd2fadfbeb0da1caa277159a96776d"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/struct.proto",
+      "bytes": 3778,
+      "sha256": "1bf07ba8b9a24e3a0390dddac3ad0db41c63287d252788b02398220b9abc900f"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/timestamp.proto",
+      "bytes": 6449,
+      "sha256": "14052c6042c1dd2d0b50245f2812eaab6eaf82db0b6e8ce483eae527f73b6ee8"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/type.proto",
+      "bytes": 6367,
+      "sha256": "e230e0e4aeb87c95e9f1c6acbfc0c713db3f88094f149b154717a51d020f750b"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/21ab8db82f64e2d4d5d534165ce28151/google/protobuf/wrappers.proto",
+      "bytes": 4044,
+      "sha256": "a26c1d6ec73a592ac31796289a61ceffe2db2453ff427dfdd7697aac50844280"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/annotations.proto",
+      "bytes": 1045,
+      "sha256": "d3d3b4bbe80c0481c35507376f5653fcfdfcbdc7f168aab097f25ae643b7ebe8"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/auth.proto",
+      "bytes": 9257,
+      "sha256": "bbc3dd326136486cfe2b16097a0170b728c4a6e49e5505be8e45845c901b4238"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/backend.proto",
+      "bytes": 7014,
+      "sha256": "aafc723357cae2da9a3f7b960423e88598549f32e6cb0bb03b175c743c4f4ddc"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/billing.proto",
+      "bytes": 3062,
+      "sha256": "c59d06d479947a942e911fd8ed98942706fe7459c538e1a22096fe3db0ab77c7"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/client.proto",
+      "bytes": 13316,
+      "sha256": "e06d4e7188e48bdd54f9d8e027653166bb3441537da44720ce1a8a524d3575e7"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/config_change.proto",
+      "bytes": 3166,
+      "sha256": "92e88c72baf95ef1f71c5377d55f4c8487dd4de0a13539d3b444e583eb3b37b9"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/consumer.proto",
+      "bytes": 2717,
+      "sha256": "9d121534e2823efd9b78e23601f00b48b25f99896445ed90ae2551058fa52084"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/context.proto",
+      "bytes": 3067,
+      "sha256": "073082cb9c2d125f944dc8b8b165346d84ed6e9f039f8cf2c0f1d9099840ef48"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/control.proto",
+      "bytes": 1436,
+      "sha256": "92d1df46d61c7f1909d35b640f11f384209b169da93b3867040b9615dab01328"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/distribution.proto",
+      "bytes": 8660,
+      "sha256": "eb45d0b7f30d5f294ff1765a5152f4a5643e98d1ebc032f6d033d7d63a921033"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/documentation.proto",
+      "bytes": 6940,
+      "sha256": "73f0cf53b2ba652f3f5c30054d5dd66702616fdced88b3f3de9691c3ff82e294"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/endpoint.proto",
+      "bytes": 3028,
+      "sha256": "8696534c439c21028fb783ddb2048dd415c95d358ae416e2efb440db54371b83"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/error_reason.proto",
+      "bytes": 21934,
+      "sha256": "fc8f7a516e1760ff8984cf908567feaa52cae1bdd772a02699116c86ba514a40"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/field_behavior.proto",
+      "bytes": 4289,
+      "sha256": "63f1c685d9136535ce98b38727dd2ce15312fe2d49f752f640215c65bcc70243"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/field_info.proto",
+      "bytes": 3106,
+      "sha256": "cb6b886b4dd95ae3317325720d57559eee0c2ffe99ef1721550389dfdbc54937"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/http.proto",
+      "bytes": 15159,
+      "sha256": "2ffe191f209a9a68e30f0493c66d5ce15be8deac276d55bcd4127f8cc7f453e2"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/httpbody.proto",
+      "bytes": 2693,
+      "sha256": "44f5e613fec346a0230b368702f6ff08c0a7d32f05d4bc2c64bf51df19ec43c9"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/label.proto",
+      "bytes": 1389,
+      "sha256": "2558aec4307a3307512f91a4d0ee890e9b725e2b1ce377c122d5067ff6f8fe41"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/launch_stage.proto",
+      "bytes": 3083,
+      "sha256": "cd97102f8ad7ce4ae04aaa057b6ebdcb73b2527ea1730f2922f9d89d1b1ff460"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/log.proto",
+      "bytes": 2043,
+      "sha256": "3125b378fc29dabd565015fd90544778a5120555a5c9e2465c41e80ee6458812"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/logging.proto",
+      "bytes": 3174,
+      "sha256": "c8a6e1ebb39d8ab18907807be785393fae02a59859c2097f76c95b2ac044e3c3"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/metric.proto",
+      "bytes": 10605,
+      "sha256": "7a667069777b4f314d49ddac5d40ff5dda4aded7cf03d1b3c847999fa04dfbfd"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/monitored_resource.proto",
+      "bytes": 5921,
+      "sha256": "f07e56cfd14ff40474f2d51f17a095a93447aa37af24298d1a85af86d8e6fd3d"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/monitoring.proto",
+      "bytes": 4457,
+      "sha256": "f510162f15efb2246b3df1fb6499cbc5bdeebe7a1ab8331c94238dfcf72279f0"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/policy.proto",
+      "bytes": 3254,
+      "sha256": "8df143d0472608370f4914781585f1a89abb8a4da33a17047c2c109c248b2722"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/quota.proto",
+      "bytes": 7138,
+      "sha256": "2765ed9cf66015cbcd644518c4a7a83b1999924f6a7347e0c3e45a71e8887c4e"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/resource.proto",
+      "bytes": 8744,
+      "sha256": "0d92993892b5b51e0b4ab4dde9d1b686781b395095bf0772832d74849b4bf42c"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/routing.proto",
+      "bytes": 14929,
+      "sha256": "724992f72f7e063828f44a83ba7bd7d0dc648171952e3a398602bb9a6297d816"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/service.proto",
+      "bytes": 6762,
+      "sha256": "abab3b3096480ec3b0206929e76ea278d6f21befe1111da8b7717762e4a49566"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/source_info.proto",
+      "bytes": 1091,
+      "sha256": "5ab879ca457f5e1f0ba1a72a0fe7176fc6bfcf172920f47faf411a501583f658"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/system_parameter.proto",
+      "bytes": 3475,
+      "sha256": "bdb375fc6763bec3d188fe8c5bf7ec0f33841ec700ecccf2da2dc6a9f0194a24"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/usage.proto",
+      "bytes": 3787,
+      "sha256": "f24261f66ad3290ee03715ff567b451fd4a1701e240c91e6cefed2fb64a932c6"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/api/visibility.proto",
+      "bytes": 3799,
+      "sha256": "3c84de6b746deca91942048480cc42db7e2e5253c54eec5c26c2c5b237656023"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/cloud/audit/audit_log.proto",
+      "bytes": 14531,
+      "sha256": "45836b24cab1f7c6753db7dd8750e56dca4b94c1944dba3aed8f05bf34923c9c"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/cloud/extended_operations.proto",
+      "bytes": 6308,
+      "sha256": "6094a2519ca3d751905a80b7de56ed524b6d9f3d7ef937ef565a64e20f62bbad"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/cloud/location/locations.proto",
+      "bytes": 3604,
+      "sha256": "ec33e925121b1fc8cc7b8e08b33fbc5fabe8a0613a027908153d2c144f38761b"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/geo/type/viewport.proto",
+      "bytes": 2416,
+      "sha256": "b1667fc4510759432b99a69f05908807369dfe38598ab7544783defa9e0c36e8"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/logging/type/http_request.proto",
+      "bytes": 3601,
+      "sha256": "bb368a1ea1f77a73af7c0625282da21341e7da203cdbb2ac47b4fe6bdfe050e4"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/logging/type/log_severity.proto",
+      "bytes": 2555,
+      "sha256": "581deabf2ff545db59cf4b650cf95c633832a00e342b69f9e2dc9291b71338b1"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/longrunning/operations.proto",
+      "bytes": 10513,
+      "sha256": "6b7175565dabb203b8f355c1af43caad18218d6bb9642e486ac29e37bbfc4c44"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/rpc/code.proto",
+      "bytes": 7138,
+      "sha256": "866a107784bc21fed7918eb768d0554a0a73ce82b3fe4faebdfdc1bce3609773"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/rpc/context/attribute_context.proto",
+      "bytes": 14852,
+      "sha256": "e6d49103c820bdba673a7da38720b192551a1ea40e7a86eea43edd502a06c95a"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/rpc/context/audit_context.proto",
+      "bytes": 1861,
+      "sha256": "47cd0f90d7910cc449f83f61be08bc4b1600fd2d045681eb6c16da5e460023dd"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/rpc/error_details.proto",
+      "bytes": 10869,
+      "sha256": "8f974f527ff530143f14d4f06e97b02c31452975869dde843e31cc24f8f9d0db"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/rpc/status.proto",
+      "bytes": 1934,
+      "sha256": "d1be680e153ebf82080c01c41ddf40ac6de5ade473fc8639183bbab5b9d24755"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/calendar_period.proto",
+      "bytes": 1762,
+      "sha256": "52fdb43b896ab97b93f40bbf6c9289f78507803dd5f572195118ed8152147541"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/color.proto",
+      "bytes": 6376,
+      "sha256": "90af4602b15c438963ea690bb9ea1aa64392529ad1de5345a67838dd836b508d"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/date.proto",
+      "bytes": 1955,
+      "sha256": "06e05f19945adc67a9745310ff57118697728a8f2a27c06d62491076f00e230b"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/datetime.proto",
+      "bytes": 3905,
+      "sha256": "8912d198f3d2459e5bf3aa3aca3888b0af35d115c6cac5b049a174f025ed0255"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/dayofweek.proto",
+      "bytes": 1204,
+      "sha256": "e7a6015d451c0b15d098f58d83be86dce208f9b3cbb408c29af093920b3a2706"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/decimal.proto",
+      "bytes": 4213,
+      "sha256": "307c21b49bf12ce9939e6945afbce353350cbfe1ad2968edf0a8c8ee1f287127"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/expr.proto",
+      "bytes": 2730,
+      "sha256": "874d683dac27fdb659b84f2d6b3c30538036747776ee00d3ca9f3dc4ed8d6d5d"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/fraction.proto",
+      "bytes": 1156,
+      "sha256": "bff50c8f8d1a6c89c6ea0cf0dfce9af69a051f7475aacd4d2fb2d90961df988b"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/interval.proto",
+      "bytes": 1667,
+      "sha256": "68bf5ef06637ea0777d2df9ee1c0cf39532819be2dff35e1b71fb7bc63dafd2a"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/latlng.proto",
+      "bytes": 1447,
+      "sha256": "a76296383e31c717f179a8c2b7eca28074611f4b8199e8de019bffab01574d5f"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/localized_text.proto",
+      "bytes": 1303,
+      "sha256": "9d2965b412efad321863e985d3804596bab26eab6f9d4152ebf0ea0fa48e81bc"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/money.proto",
+      "bytes": 1603,
+      "sha256": "73e13c27df2c856b42ebcb65a9459c4bfc59dd9e09cc48e1a765bbe06b9fa406"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/month.proto",
+      "bytes": 1479,
+      "sha256": "efa4efa9011d0033de91b4a7a50c412753ffc41afca3e048fea1b70721c921f2"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/phone_number.proto",
+      "bytes": 4744,
+      "sha256": "57f18999af4514686dd691240b3306f482f89ddf8a4194164f9ef83f3b06b9d2"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/postal_address.proto",
+      "bytes": 6235,
+      "sha256": "fd1e35cde68ed4f706a9f114e201e517352e6ca276484473c619ef2714c8203d"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/quaternion.proto",
+      "bytes": 3791,
+      "sha256": "29fa133569f0a362f2a5d06ff2b30f1c1e697ff91d708e503e22d7aee71d3a9c"
+    },
+    {
+      "path": "proto-src/target/protoc-dependencies/d9ecc1a2ee00d34e97de06d7bce5d0a4/google/type/timeofday.proto",
+      "bytes": 1667,
+      "sha256": "ef330490959e62d79555ccf74a933af3a1852faea15fe6a0b9aa88299c09bf63"
+    },
+    {
+      "path": "proto-src/target/protoc-plugins/protoc-3.25.3-linux-x86_64.exe",
+      "bytes": 8850744,
+      "sha256": "e718992c5733ece01264f160c0890229770791e51c9612a2b34dc17f83ab3773"
+    },
+    {
+      "path": "proto-src/target/protoc-plugins/protoc-gen-grpc-java-1.64.0-linux-x86_64.exe",
+      "bytes": 3048672,
+      "sha256": "bf41ee06d6bc529d31b2e66f0fd3b8f320acdd93d0a5d969ca8596cb732eaddb"
+    },
+    {
+      "path": "dist/DRL-Dispatching-1.2.0.jar",
+      "bytes": 124098,
+      "sha256": "7fe4d7dc6db1fc0705d1ad2c9170133d3df15d42696ed86ecb63269316af2218"
+    },
+    {
+      "path": "dist/protocol_manifest.json",
+      "bytes": 649,
+      "sha256": "ef80b246322dcfe3836c9014f354f0d4642fb5e1af902a3d20d5d4ec0fcef3ca"
+    },
+    {
+      "path": "test/__pycache__/test_contracts.cpython-311-pytest-9.1.1.pyc",
+      "bytes": 59389,
+      "sha256": "53c52e458536ddb760f1470bc476eb25a66d1e014b6a137a92855acfd03908f3"
+    },
+    {
+      "path": "test/__pycache__/test_contracts.cpython-311.pyc",
+      "bytes": 23807,
+      "sha256": "9db719af2ecb758e1e0fc0c348cf0878f212a4d15cc77a28b49ac10289024876"
+    },
+    {
+      "path": "test/__pycache__/test_training_finish.cpython-311-pytest-9.1.1.pyc",
+      "bytes": 33490,
+      "sha256": "6854f8f9e036d79254dc4c586736f054d183124d50519bd620267399cbd34f54"
+    },
+    {
+      "path": "test/__pycache__/test_training_finish.cpython-311.pyc",
+      "bytes": 14841,
+      "sha256": "4fd2527f2992304c73e5dbf890c3b72466f42a1b111f41efb8bfb829d5e0de88"
+    },
+    {
+      "path": "test/test_contracts.py",
+      "bytes": 11569,
+      "sha256": "3a2e74c8f1a89daca4aadbdc139f90ac2aae1e1de2c20c4d6728593b2d1c48fe"
+    },
+    {
+      "path": "test/test_training_finish.py",
+      "bytes": 6116,
+      "sha256": "0794300c9f71ce18fd830c736247f4a186d580f39926b1fc2c1917f368491f86"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 232,
+      "sha256": "e7c4f596b23248c93bf0d58acb8acf9e854257d95a11bfe370eb9142bdbd34e0"
+    }
+  ],
+  "python_imports": {
+    "python/__init__.py": [],
+    "python/alp_audit.py": [
+      "from __future__ import annotations",
+      "import argparse",
+      "import hashlib",
+      "import json",
+      "from pathlib import Path",
+      "import xml.etree.ElementTree as ET",
+      "from .observation_contract import OBSERVATION_ALP_PATH, validate_schema_output",
+      "from .reward_contract import FROZEN_REWARD_PARAMETERS, REWARD_CONTRACT_ID"
+    ],
+    "python/dispatch_bridge.py": [
+      "from __future__ import annotations",
+      "import queue",
+      "import threading",
+      "import time",
+      "from dataclasses import dataclass, field",
+      "from typing import Optional, Sequence",
+      "import numpy as np",
+      "from .generated import dispatch_pb2",
+      "from .observation_contract import OBSERVATION_SCHEMA_ID, validate_observation",
+      "from .reward_contract import REWARD_CONTRACT_ID, SHIFT_SECONDS, WINDOWS_PER_EPISODE, validate_reward_accounting, validate_window_summary, window_summary_to_dict"
+    ],
+    "python/dispatch_env.py": [
+      "from __future__ import annotations",
+      "from typing import Any, Optional, Protocol",
+      "import gymnasium as gym",
+      "import numpy as np",
+      "from gymnasium import spaces",
+      "from .dispatch_bridge import ACTION_COUNT, CallbackTicket, DispatchCallbackBridge, ProtocolError, observation_array",
+      "from .generated import dispatch_pb2",
+      "from .observation_contract import OBSERVATION_LOW, OBSERVATION_HIGH, action_mask",
+      "from .reward_contract import window_summary_to_dict"
+    ],
+    "python/dispatch_service.py": [
+      "from __future__ import annotations",
+      "from concurrent import futures",
+      "from typing import Optional",
+      "import grpc",
+      "from .dispatch_bridge import DispatchCallbackBridge, ProtocolError",
+      "from .generated import dispatch_pb2_grpc"
+    ],
+    "python/episode_budget_ppo.py": [
+      "from __future__ import annotations",
+      "import numpy as np",
+      "import torch as th",
+      "import stable_baselines3",
+      "from gymnasium import spaces",
+      "from stable_baselines3 import PPO",
+      "from stable_baselines3.common.buffers import RolloutBuffer",
+      "from stable_baselines3.common.callbacks import BaseCallback",
+      "from stable_baselines3.common.utils import obs_as_tensor",
+      "from stable_baselines3.common.vec_env import VecEnv"
+    ],
+    "python/episode_runner.py": [
+      "from __future__ import annotations",
+      "import json",
+      "import os",
+      "import random",
+      "import signal",
+      "import subprocess",
+      "import threading",
+      "import uuid",
+      "from collections.abc import Mapping, Sequence",
+      "from pathlib import Path",
+      "from typing import Any, Optional"
+    ],
+    "python/generated/__init__.py": [],
+    "python/generated/dispatch_pb2.py": [
+      "from google.protobuf import descriptor as _descriptor",
+      "from google.protobuf import descriptor_pool as _descriptor_pool",
+      "from google.protobuf import runtime_version as _runtime_version",
+      "from google.protobuf import symbol_database as _symbol_database",
+      "from google.protobuf.internal import builder as _builder"
+    ],
+    "python/generated/dispatch_pb2_grpc.py": [
+      "import grpc",
+      "import warnings",
+      "from . import dispatch_pb2 as dispatch__pb2",
+      "from grpc._utilities import first_version_is_lower"
+    ],
+    "python/observation_contract.py": [
+      "from __future__ import annotations",
+      "import csv",
+      "import io",
+      "import json",
+      "from pathlib import Path",
+      "import numpy as np"
+    ],
+    "python/protocol_artifacts.py": [
+      "import hashlib",
+      "import json",
+      "from pathlib import Path"
+    ],
+    "python/reward_contract.py": [
+      "from __future__ import annotations",
+      "from math import isclose, isfinite",
+      "from typing import Any, Mapping"
+    ],
+    "python/rollout_debug.py": [
+      "from __future__ import annotations",
+      "import copy",
+      "import hashlib",
+      "import json",
+      "import os",
+      "import threading",
+      "import time",
+      "import uuid",
+      "from datetime import datetime, timezone",
+      "from pathlib import Path",
+      "import numpy as np",
+      "import stable_baselines3"
+    ],
+    "python/stage_statistics.py": [
+      "from __future__ import annotations",
+      "import json",
+      "import math",
+      "from collections import deque",
+      "from pathlib import Path",
+      "import stable_baselines3",
+      "from stable_baselines3.common.callbacks import BaseCallback",
+      "from stable_baselines3.common.logger import CSVOutputFormat"
+    ],
+    "python/train.py": [
+      "from __future__ import annotations",
+      "import argparse",
+      "import hashlib",
+      "import json",
+      "import os",
+      "import platform",
+      "import subprocess",
+      "import sys",
+      "import time",
+      "import uuid",
+      "from pathlib import Path",
+      "from typing import Any, Optional",
+      "import numpy as np",
+      "import stable_baselines3",
+      "from stable_baselines3.common.callbacks import BaseCallback",
+      "from stable_baselines3.common.monitor import Monitor",
+      "from .dispatch_bridge import DispatchCallbackBridge",
+      "from .dispatch_env import DispatchEnv",
+      "from .dispatch_service import create_server",
+      "from .episode_runner import ParameterVariationEpisodeRunner",
+      "from .episode_budget_ppo import EpisodeBudgetPPO",
+      "from .stage_statistics import StageStatisticsCallback",
+      "from .rollout_debug import RolloutDebug",
+      "from .reward_contract import FROZEN_REWARD_PARAMETERS, REWARD_CONTRACT_ID, WINDOWS_PER_EPISODE",
+      "from .observation_contract import OBSERVATION_SCHEMA_ID, OBSERVATION_SIZE, OBSERVATION_ALP_PATH",
+      "from .protocol_artifacts import verify_protocol_artifacts",
+      "from .alp_audit import validate_alp_contract"
+    ],
+    "test/test_contracts.py": [
+      "from concurrent.futures import ThreadPoolExecutor",
+      "import hashlib",
+      "import importlib",
+      "import json",
+      "from pathlib import Path",
+      "import pkgutil",
+      "import grpc",
+      "import numpy as np",
+      "import pytest",
+      "from python import observation_contract as oc",
+      "from python import reward_contract as rc",
+      "from python.alp_audit import validate_alp_contract",
+      "from python.dispatch_bridge import DispatchCallbackBridge, ProtocolError, observation_array",
+      "from python.dispatch_env import DispatchEnv",
+      "from python.dispatch_service import DispatchService",
+      "from python.episode_runner import ParameterVariationEpisodeRunner",
+      "from python.generated import dispatch_pb2 as pb, dispatch_pb2_grpc as rpc",
+      "from python.protocol_artifacts import verify_protocol_artifacts",
+      "import python",
+      "import shutil"
+    ],
+    "test/test_training_finish.py": [
+      "import gymnasium as gym",
+      "import numpy as np",
+      "import pytest",
+      "import torch",
+      "from gymnasium import spaces",
+      "from stable_baselines3.common.callbacks import BaseCallback",
+      "from stable_baselines3.common.logger import configure",
+      "from python.episode_budget_ppo import EpisodeBudgetPPO",
+      "from python.train import TrainingProgressCallback",
+      "from python.rollout_debug import RolloutDebug",
+      "from python.stage_statistics import StageStatisticsCallback",
+      "import json"
+    ]
+  },
+  "python_path_strings": {
+    "python/__init__.py": [],
+    "python/alp_audit.py": [
+      "./DefaultValue/Code",
+      "./Functions/Function",
+      "./InitialValue/Code",
+      "./Model/ModelTimeUnit",
+      "./ModelTimeProperties/FinalTime",
+      "./Variables/Variable",
+      "alp_contract_provenance.json"
+    ],
+    "python/dispatch_bridge.py": [
+      "DECISION/END received before EPISODE_START",
+      "EPISODE_START cannot carry prior transition components/windows",
+      "EPISODE_START must have previous_action=-1 and zero reward/delta",
+      "START/DECISION cannot be terminal",
+      "START/DECISION must require an action"
+    ],
+    "python/dispatch_env.py": [],
+    "python/dispatch_service.py": [],
+    "python/episode_budget_ppo.py": [
+      "Episode-budget PPO finish for SB3 2.9.0 (single serial environment).\n\nCollector below follows OnPolicyAlgorithm.collect_rollouts from installed SB3\n2.9.0, with stop-after-add and exact-size final-buffer changes. PPO.train and\nOnPolicyAlgorithm.learn remain upstream, including singleton normalization guard,\nterminal/time-limit bootstrap, schedules and full-rollout minibatch behavior.\nEach instance supports one learn() call; load a ZIP into a fresh instance to\ncontinue. Session flags/counters reset in _setup_model(), after ZIP metadata is\nrestored and before SB3 restores the policy and optimizer state dictionaries.\nUpgrades require re-auditing this collector and rerunning test_training_finish.\n"
+    ],
+    "python/episode_runner.py": [],
+    "python/generated/__init__.py": [],
+    "python/generated/dispatch_pb2.py": [
+      "dispatch.proto"
+    ],
+    "python/generated/dispatch_pb2_grpc.py": [
+      "/DRL.grpc.DispatchService/GetNextDestination"
+    ],
+    "python/observation_contract.py": [
+      " must encode (truckId+1)/9 or zero",
+      "Physical observation contract extracted from DRL-PPO.alp, never clipped.\n\nobservation_schema.json records all 1519 indices and Java scaling expressions.\nOnly proven categorical/unit bounds are enforced. Scaled physical quantities\nare finite float32, not necessarily in [0, 1]. Runtime schema CSV comparison\nis still required to verify the loaded AnyLogic model.\n",
+      "anylogic/DRL-PPO.alp",
+      "observation_schema.json"
+    ],
+    "python/protocol_artifacts.py": [
+      "dist/DRL-Dispatching-1.2.0.jar",
+      "dist/protocol_manifest.json",
+      "proto-src/src/main/proto/dispatch.proto",
+      "proto-src/target/DRL-Dispatching-1.2.0.jar",
+      "proto/dispatch.proto",
+      "python/generated"
+    ],
+    "python/reward_contract.py": [
+      "ALP gradeDeviation/gradeReward; symmetric 0.01 allowance at current settings.",
+      "ALP physical-v3 reward and time-window contract shared by training code/tests."
+    ],
+    "python/rollout_debug.py": [
+      ".json",
+      ".npz",
+      "Run attribution events plus optional SB3 2.9.0 rollout snapshots.\n\nNo prediction, sampling, seeding, or optimizer operation is performed here.\nDetailed snapshots/hash collection is opt-in and adds wall time when enabled.\nRPC reception/release is Python evidence, not proof of AnyLogic clock freezing.\n",
+      "action_request identifies observation/action; result_request identifies reward/terminal callback",
+      "sync_events.jsonl"
+    ],
+    "python/stage_statistics.py": [
+      "Preserve deque identity/maxlen when present; initialize missing deques.",
+      "Stage-local reporting only; no policy, optimizer, rollout or RNG changes.\n\nSB3 2.9.0 load() restores checkpoint attributes before _setup_model() and then\nrestores policy/optimizer state. _setup_learn(reset_num_timesteps=False) retains\nexisting episode deques. on_training_start runs AFTER that setup, BEFORE steps.\nOnly ep_info_buffer and ep_success_buffer are episode-statistics deques; do not\nclear the PPO rollout buffer, optimizer state, or cumulative counters.\n",
+      "stage/",
+      "stage/episode_index",
+      "stage/reward_components/",
+      "stage/rolling_episode_count",
+      "stage/timesteps",
+      "stage_episodes.jsonl",
+      "stage_metrics.csv",
+      "stage_statistics.json"
+    ],
+    "python/train.py": [
+      "--resume-model must come from a completed P0 run containing run_manifest.json and SUCCESS.json",
+      "/",
+      "SUCCESS.json",
+      "dispatch_ppo.zip",
+      "dist/DRL-Dispatching-1.2.0.jar",
+      "monitor.csv",
+      "n/a",
+      "proto-src/src/main/proto/dispatch.proto",
+      "python/episode_budget_ppo.py",
+      "resume model hash does not match SUCCESS.json",
+      "run_manifest.json",
+      "training_finish.json",
+      "transitions.jsonl"
+    ],
+    "test/test_contracts.py": [
+      "Math.min(now,rlShiftSeconds)/28800.0",
+      "Math.min(now,rlShiftSeconds)/480.0",
+      "anylogic/DRL-PPO.alp",
+      "changed.alp",
+      "dist/DRL-Dispatching-1.2.0.jar",
+      "dist/protocol_manifest.json",
+      "proto-src/src/main/proto/dispatch.proto",
+      "proto-src/target/DRL-Dispatching-1.2.0.jar",
+      "proto/dispatch.proto",
+      "python/episode_budget_ppo.py",
+      "python/generated/dispatch_pb2.py",
+      "python/generated/dispatch_pb2_grpc.py"
+    ],
+    "test/test_training_finish.py": [
+      "progress.csv",
+      "rollout_*.json",
+      "stage_episodes.jsonl",
+      "train/value_loss",
+      "transitions.jsonl"
+    ]
+  },
+  "jar_entries": {
+    "proto-src/target/DRL-Dispatching-1.2.0.jar": [
+      "META-INF/",
+      "META-INF/MANIFEST.MF",
+      "DRL/",
+      "DRL/grpc/",
+      "META-INF/maven/",
+      "META-INF/maven/dispatchppo/",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/",
+      "DRL/grpc/DispatchServiceGrpc$AsyncService.class",
+      "DRL/grpc/GlobalStateOrBuilder.class",
+      "DRL/grpc/DispatchResponseOrBuilder.class",
+      "DRL/grpc/WindowSummary.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceImplBase.class",
+      "DRL/grpc/EgoTruckState$1.class",
+      "DRL/grpc/DispatchRequest.class",
+      "DRL/grpc/WindowSummary$1.class",
+      "DRL/grpc/GlobalState$1.class",
+      "DRL/grpc/DispatchRequest$RewardComponentsDefaultEntryHolder.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceBlockingStub.class",
+      "DRL/grpc/WindowSummary$Builder.class",
+      "DRL/grpc/WindowSummaryOrBuilder.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceFileDescriptorSupplier.class",
+      "DRL/grpc/DispatchKind.class",
+      "DRL/grpc/Observation$1.class",
+      "DRL/grpc/EgoTruckStateOrBuilder.class",
+      "DRL/grpc/GlobalState.class",
+      "DRL/grpc/DumpSiteStateOrBuilder.class",
+      "DRL/grpc/DumpSiteState$1.class",
+      "DRL/grpc/DispatchServiceGrpc$MethodHandlers.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceStub.class",
+      "DRL/grpc/LoadSiteState$Builder.class",
+      "DRL/grpc/DispatchRequest$Builder.class",
+      "DRL/grpc/DispatchResponse$1.class",
+      "DRL/grpc/DumpSiteState$Builder.class",
+      "DRL/grpc/DispatchServiceGrpc$2.class",
+      "DRL/grpc/DispatchKind$1.class",
+      "DRL/grpc/LoadSiteState$1.class",
+      "DRL/grpc/DispatchRequest$1.class",
+      "DRL/grpc/LoadSiteState.class",
+      "DRL/grpc/EgoTruckState.class",
+      "DRL/grpc/Observation.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceMethodDescriptorSupplier.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceFutureStub.class",
+      "DRL/grpc/DispatchServiceGrpc$1.class",
+      "DRL/grpc/EgoTruckState$Builder.class",
+      "DRL/grpc/DispatchProto.class",
+      "DRL/grpc/DispatchResponse.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceBaseDescriptorSupplier.class",
+      "DRL/grpc/DispatchRequestOrBuilder.class",
+      "DRL/grpc/Observation$Builder.class",
+      "DRL/grpc/LoadSiteStateOrBuilder.class",
+      "DRL/grpc/DispatchServiceGrpc$3.class",
+      "DRL/grpc/ObservationOrBuilder.class",
+      "DRL/grpc/DumpSiteState.class",
+      "DRL/grpc/GlobalState$Builder.class",
+      "DRL/grpc/DispatchServiceGrpc.class",
+      "DRL/grpc/DispatchResponse$Builder.class",
+      "dispatch.proto",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/pom.xml",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/pom.properties"
+    ],
+    "dist/DRL-Dispatching-1.2.0.jar": [
+      "META-INF/",
+      "META-INF/MANIFEST.MF",
+      "DRL/",
+      "DRL/grpc/",
+      "META-INF/maven/",
+      "META-INF/maven/dispatchppo/",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/",
+      "DRL/grpc/DispatchServiceGrpc$AsyncService.class",
+      "DRL/grpc/GlobalStateOrBuilder.class",
+      "DRL/grpc/DispatchResponseOrBuilder.class",
+      "DRL/grpc/WindowSummary.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceImplBase.class",
+      "DRL/grpc/EgoTruckState$1.class",
+      "DRL/grpc/DispatchRequest.class",
+      "DRL/grpc/WindowSummary$1.class",
+      "DRL/grpc/GlobalState$1.class",
+      "DRL/grpc/DispatchRequest$RewardComponentsDefaultEntryHolder.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceBlockingStub.class",
+      "DRL/grpc/WindowSummary$Builder.class",
+      "DRL/grpc/WindowSummaryOrBuilder.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceFileDescriptorSupplier.class",
+      "DRL/grpc/DispatchKind.class",
+      "DRL/grpc/Observation$1.class",
+      "DRL/grpc/EgoTruckStateOrBuilder.class",
+      "DRL/grpc/GlobalState.class",
+      "DRL/grpc/DumpSiteStateOrBuilder.class",
+      "DRL/grpc/DumpSiteState$1.class",
+      "DRL/grpc/DispatchServiceGrpc$MethodHandlers.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceStub.class",
+      "DRL/grpc/LoadSiteState$Builder.class",
+      "DRL/grpc/DispatchRequest$Builder.class",
+      "DRL/grpc/DispatchResponse$1.class",
+      "DRL/grpc/DumpSiteState$Builder.class",
+      "DRL/grpc/DispatchServiceGrpc$2.class",
+      "DRL/grpc/DispatchKind$1.class",
+      "DRL/grpc/LoadSiteState$1.class",
+      "DRL/grpc/DispatchRequest$1.class",
+      "DRL/grpc/LoadSiteState.class",
+      "DRL/grpc/EgoTruckState.class",
+      "DRL/grpc/Observation.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceMethodDescriptorSupplier.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceFutureStub.class",
+      "DRL/grpc/DispatchServiceGrpc$1.class",
+      "DRL/grpc/EgoTruckState$Builder.class",
+      "DRL/grpc/DispatchProto.class",
+      "DRL/grpc/DispatchResponse.class",
+      "DRL/grpc/DispatchServiceGrpc$DispatchServiceBaseDescriptorSupplier.class",
+      "DRL/grpc/DispatchRequestOrBuilder.class",
+      "DRL/grpc/Observation$Builder.class",
+      "DRL/grpc/LoadSiteStateOrBuilder.class",
+      "DRL/grpc/DispatchServiceGrpc$3.class",
+      "DRL/grpc/ObservationOrBuilder.class",
+      "DRL/grpc/DumpSiteState.class",
+      "DRL/grpc/GlobalState$Builder.class",
+      "DRL/grpc/DispatchServiceGrpc.class",
+      "DRL/grpc/DispatchResponse$Builder.class",
+      "dispatch.proto",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/pom.xml",
+      "META-INF/maven/dispatchppo/DRL-Dispatching/pom.properties"
+    ]
+  },
+  "alp_resources": [
+    {
+      "path": "image2.png",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "3d/mine_truck.dae",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "animal-sniffer-annotations-1.23.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "annotations-4.1.1.4.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "checker-qual-3.37.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "error_prone_annotations-2.23.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "failureaccess-1.0.1.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-api-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-context-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-core-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-netty-shaded-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-protobuf-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-protobuf-lite-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-stub-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "grpc-util-1.64.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "gson-2.10.1.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "guava-32.1.3-jre.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "javax.annotation-api-1.3.2.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "jsr305-3.0.2.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "perfmark-api-0.26.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "protobuf-java-3.25.3.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "proto-google-common-protos-2.29.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "SpeedControl-1.0.0.jar",
+      "exists_relative_to_alp": false
+    },
+    {
+      "path": "../dist/DRL-Dispatching-1.2.0.jar",
+      "exists_relative_to_alp": true
+    }
+  ],
+  "parameter_variations": [
+    {
+      "name": "RL_Training",
+      "number_of_runs": "20",
+      "serial": true,
+      "freeform": "true",
+      "use_replication": "false",
+      "final_time": "28800.0",
+      "arguments": "",
+      "vm_args": "",
+      "overrides": [
+        {
+          "id": "1776757906246",
+          "expression": null
+        },
+        {
+          "id": "1776757924239",
+          "expression": null
+        },
+        {
+          "id": "1776757930264",
+          "expression": null
+        },
+        {
+          "id": "1780630090839",
+          "expression": null
+        },
+        {
+          "id": "1789527943204",
+          "expression": null
+        },
+        {
+          "id": "1789527945426",
+          "expression": null
+        },
+        {
+          "id": "1789527949493",
+          "expression": null
+        },
+        {
+          "id": "1789527951500",
+          "expression": null
+        },
+        {
+          "id": "1789528060107",
+          "expression": null
+        },
+        {
+          "id": "1789528100825",
+          "expression": null
+        },
+        {
+          "id": "1789528108950",
+          "expression": null
+        },
+        {
+          "id": "1789528116950",
+          "expression": null
+        },
+        {
+          "id": "1789528126879",
+          "expression": null
+        },
+        {
+          "id": "1789614694283",
+          "expression": null
+        },
+        {
+          "id": "1789614703963",
+          "expression": null
+        },
+        {
+          "id": "1789614716915",
+          "expression": null
+        },
+        {
+          "id": "1789614727314",
+          "expression": null
+        },
+        {
+          "id": "1789643802467",
+          "expression": null
+        },
+        {
+          "id": "1789643818166",
+          "expression": null
+        },
+        {
+          "id": "1789643833222",
+          "expression": null
+        },
+        {
+          "id": "1790474843594",
+          "expression": null
+        },
+        {
+          "id": "1790474918809",
+          "expression": null
+        },
+        {
+          "id": "1791514699057",
+          "expression": "(long) index + 1L"
+        },
+        {
+          "id": "1791514725026",
+          "expression": "202610160011L + (long) index"
+        },
+        {
+          "id": "1792579590957",
+          "expression": null
+        },
+        {
+          "id": "1792579635048",
+          "expression": null
+        }
+      ]
+    }
+  ]
+}

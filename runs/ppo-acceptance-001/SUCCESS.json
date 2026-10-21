@@ -1,0 +1,29 @@
+{
+  "policy_contract_id": "dispatch-masked-categorical-v1",
+  "status": "complete",
+  "audit_run_id": "436aea81-e8e8-4574-81b4-e7bbbbef6298",
+  "process_pid": 147070,
+  "completed_episodes": 2,
+  "model_sha256": "d1d3b7462a47383dbe87e216a34a7b7e7c2cff2e51609d7d074ce5a8e679a463",
+  "final_num_timesteps": 375,
+  "training_finish": {
+    "collected_transitions": 375,
+    "unique_updated_transitions": 375,
+    "discarded_transitions": 0,
+    "last_rollout_valid_length": 119,
+    "last_terminal_transition_updated": true,
+    "episode_budget_reached": true,
+    "final_logger_flushed": true,
+    "events": [
+      "ppo_update_completed",
+      "ppo_update_completed",
+      "ppo_update_completed",
+      "final_logger_flushed",
+      "model_saved"
+    ],
+    "stable_baselines3_version": "2.9.0"
+  },
+  "reward_contract_id": "dispatch-reward-physical-v3",
+  "observation_schema_id": "dispatch.physical.v3",
+  "anylogic_seed_manifest_sha256": "1c0477c6a54bb2a1c31a79e291fe62448eee6a9219c2e16249b89fcad57ca535"
+}

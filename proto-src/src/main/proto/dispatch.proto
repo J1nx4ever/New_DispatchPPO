@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package DRL.grpc;
+
+option java_package = "DRL.grpc";
+option java_multiple_files = true;
+option java_outer_classname = "DispatchProto";
+
+// Request lifecycle for one event-driven dispatch episode.
+enum DispatchKind {
+  DISPATCH_KIND_UNSPECIFIED = 0;
+  EPISODE_START = 1;
+  DECISION = 2;
+  EPISODE_END = 3;
+}
+
+// Legacy structured state. Kept so older AnyLogic monitoring code can still
+// compile. Training consumes Observation.schema_id and Observation.values.
+message GlobalState {
+  double grade_gap = 1;
+  double crusher_ore_tons_norm = 2;
+  double progress = 3;
+  double waiting_time = 4;
+}
+
+message EgoTruckState {
+  int32 current_location_id = 1;
+}
+
+message LoadSiteState {
+  int32 site_id = 1;
+  double travel_time = 2;
+  int32 queue_size = 3;
+  int32 incoming_trucks = 4;
+  double grade = 5;
+  bool busy = 6;
+}
+
+message DumpSiteState {
+  int32 site_id = 1;
+  int32 queue_size = 2;
+  int32 empty_spot_count = 3;
+}
+
+message Observation {
+  GlobalState global_state = 1;
+  EgoTruckState ego_truck = 2;
+  repeated LoadSiteState load_sites = 3;
+  repeated DumpSiteState dump_sites = 4;
+
+  // dispatch.physical.v3: exactly 1519 finite float32 values; no wire-field changes.
+  string schema_id = 5;
+  repeated float values = 6 [packed = true];
+}
+
+// One business-time window closed since the previous dispatch callback.
+// This is deliberately separate from reward_components: reward components are
+// additive, while window constraints must preserve one record per T_win.
+message WindowSummary {
+  int32 window_index = 1;
+  double window_start_seconds = 2;
+  double window_end_seconds = 3;
+  double ore_tons = 4;
+  double metal_tons = 5;
+  double grade = 6;
+  double grade_gap = 7;
+  double grade_reward_raw = 8;
+  double grade_reward_weighted = 9;
+  bool violation_upper = 10; // grade_gap < -0.02 (mixture grade too high)
+  bool violation_lower = 11; // grade_gap > +0.01 (mixture grade too low)
+}
+
+message DispatchRequest {
+  // Existing inference fields retain their original positions.
+  int32 truck_id = 1;
+  Observation obs = 2;
+
+  // Event-driven training fields.
+  string episode_id = 3;
+  int64 decision_sequence = 4;
+  string request_id = 5;
+  DispatchKind kind = 6;
+  bool action_required = 7;
+  int32 previous_action = 8;
+  double transition_reward = 9;
+  map<string, double> reward_components = 10;
+  double sim_time_seconds = 11;
+  double sim_time_delta_seconds = 12;
+  bool terminated = 13;
+  bool truncated = 14;
+
+  // P0 reproducibility contract. Field numbers are append-only.
+  repeated WindowSummary closed_windows = 15;
+  int64 experiment_run_index = 16;
+  int64 experiment_seed = 17;
+  string reward_contract_id = 18;
+}
+
+message DispatchResponse {
+  // Existing inference response fields retain their original positions.
+  int32 action = 1;
+  double value = 2;
+  repeated double logits = 3 [packed = true];
+  int64 latency_us = 4;
+
+  // Correlation and terminal-ACK fields.
+  bool has_action = 5;
+  string episode_id = 6;
+  int64 decision_sequence = 7;
+}
+
+service DispatchService {
+  rpc GetNextDestination(DispatchRequest) returns (DispatchResponse);
+}

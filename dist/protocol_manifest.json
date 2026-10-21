@@ -1,0 +1,13 @@
+{
+  "authority": "proto-src/src/main/proto/dispatch.proto",
+  "proto_sha256": "94ffeccac28a7b77ad399e03dde718f748ae218b12e92ade1ee8fc1bc7811504",
+  "jar_sha256": "7fe4d7dc6db1fc0705d1ad2c9170133d3df15d42696ed86ecb63269316af2218",
+  "normalized_descriptor_sha256": "b16327bbbb516ef73c26b341866e232cd25a5c1e1be185d15813d0f904ab51e2",
+  "python_generated_sha256": {
+    "dispatch_pb2_grpc.py": "c97ae99e82932fe28003a6e9008efe1f3c71f3fe6c4c82b78c61412e42f86cbe",
+    "dispatch_pb2.py": "6d16f30a3df76267e42f509350f5e6ec1438e45ef9e16ae25508b408a6946742"
+  },
+  "java_protobuf": "3.25.3",
+  "java_grpc": "1.64.0",
+  "java_python_descriptor_equal": true
+}
