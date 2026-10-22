@@ -1,12 +1,15 @@
-"""ALP physical-v3 reward and time-window contract shared by training code/tests."""
+"""ALP physical-v4 reward and time-window contract shared by training code/tests."""
 
 from __future__ import annotations
 
 from math import isclose, isfinite
 from typing import Any, Mapping
+from .reward_config import RewardConfiguration
+
+ADDITIVE_COMPONENTS = ("wait", "grade_action", "grade_2h", "grade_shift", "production", "waste")
 
 
-REWARD_CONTRACT_ID = "dispatch-reward-physical-v3"
+REWARD_CONTRACT_ID = "dispatch-reward-physical-v4"
 SHIFT_SECONDS = 28_800.0
 WINDOW_SECONDS = 7_200.0
 WINDOWS_PER_EPISODE = 4
@@ -30,8 +33,6 @@ FROZEN_REWARD_PARAMETERS: dict[str, float] = {
     "w_grade_action": 0.15,
     "grade_prior_tons": 20_000.0,
     "grade_action_delta_clip": 0.10,
-    "w_waste_lag": 0.02,
-    "production_lag_tolerance": 0.05,
 }
 
 
@@ -128,17 +129,24 @@ def validate_reward_accounting(
     transition_reward: float,
     reward_components: Mapping[str, Any],
     closed_windows: list[Mapping[str, Any]],
+    *, config: RewardConfiguration | None = None,
 ) -> None:
     if not isfinite(float(transition_reward)) or not all(isfinite(float(v)) for v in reward_components.values()):
         raise ValueError("reward or diagnostic component contains NaN or infinity")
-    required = {"wait", "production", "grade_2h", "grade_shift", "grade_action"}
+    config = config or RewardConfiguration()
+    required = set(ADDITIVE_COMPONENTS)
     for window in closed_windows:
         validate_window_summary(window)
     missing = required.difference(reward_components)
     if missing:
         raise ValueError(f"reward_components missing frozen fields: {sorted(missing)}")
     action_reward = float(reward_components["grade_action"])
-    if not -0.020000001 <= action_reward <= 0.015000001:
+    enabled = reward_components.get("grade_action_enabled")
+    if enabled not in (0.0, 1.0) or bool(enabled) != config.grade_action_enabled:
+        raise ValueError("grade_action_enabled disagrees with reward configuration")
+    if not config.grade_action_enabled and action_reward != 0.0:
+        raise ValueError("grade_action must be exactly zero when disabled")
+    if not -0.015000001 <= action_reward <= 0.015000001:
         raise ValueError("grade_action outside ALP clipping bounds")
     component_sum = sum(float(reward_components[field]) for field in required)
     if not isclose(float(transition_reward), component_sum, abs_tol=1e-8):
@@ -207,3 +215,18 @@ def validate_reward_accounting(
             raise ValueError("production_shortfall disagrees with ore_tons_shift")
         if not isclose(float(reward_components["production"]), production, abs_tol=1e-9):
             raise ValueError("production disagrees with frozen reward contract")
+
+    if "grade_gap_shift" in reward_components:
+        required_waste = {"waste_tons_shift", "waste_target_tons", "waste_fraction_raw", "waste_shortfall"}
+        if required_waste.difference(reward_components):
+            raise ValueError("terminal reward missing waste diagnostics")
+        tons = float(reward_components["waste_tons_shift"])
+        target = float(reward_components["waste_target_tons"])
+        if tons < 0 or not isclose(target, config.waste_target_tons, abs_tol=1e-9):
+            raise ValueError("waste tonnage/target disagrees with reward configuration")
+        fraction = tons / target if target > 0 else 0.0
+        shortfall = max(0.0, min(1.0, 1.0-fraction)) if target > 0 else 0.0
+        expected = -config.waste_shortfall_weight * shortfall
+        for key, value in [("waste_fraction_raw", fraction),("waste_shortfall", shortfall),("waste", expected)]:
+            if not isclose(float(reward_components[key]), value, abs_tol=1e-9):
+                raise ValueError(f"{key} disagrees with waste shortfall formula")

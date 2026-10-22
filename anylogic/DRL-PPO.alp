@@ -24,47 +24,25 @@ import Fusion.grpc.StepResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;]]></Import>
-			<StartupCode><![CDATA[if (numTrucks <= 0) {
-    throw new IllegalStateException("numTrucks must be > 0");
-}
-if (targetOreTons2h <= 0 || targetOreTonsShift <= 0) {
-    throw new IllegalStateException(
-        "targetOreTons2h and targetOreTonsShift must be > 0"
-    );
-}
-/*if (Math.abs(targetGrade - 0.25) > 1e-9) {
-    throw new IllegalStateException("dispatch.v2-31 requires targetGrade=0.25");
-}*/
+			<StartupCode><![CDATA[if (!Double.isFinite(targetOreTonsShift)
+    || targetOreTonsShift <= 0.0
+    || !Double.isFinite(targetWasteTonsShift)
+    || targetWasteTonsShift < 0.0
+    || !Double.isFinite(wWasteShortfall)
+    || wWasteShortfall < 0.0) {
 
-if (experimentRunIndex <= 0 || experimentSeed <= 0) {
     throw new IllegalStateException(
-        "experimentRunIndex and experimentSeed must be positive"
+        "Invalid ore/waste reward parameters"
     );
 }
 
-/*if (
-    Math.abs(numTrucks - 20.0) > 1e-9
-    || Math.abs(targetGrade - 0.25) > 1e-9
-    || Math.abs(rlShiftSeconds - 28800.0) > 1e-9
-    || Math.abs(rlWindowSeconds - 7200.0) > 1e-9
-    || Math.abs(waitRefSeconds - 200.0) > 1e-9
-    || Math.abs(targetOreTons2h - 20000.0) > 1e-9
-    || Math.abs(targetOreTonsShift - 80000.0) > 1e-9
-    || Math.abs(wWait - 1.0) > 1e-9
-    || Math.abs(wGrade2h - 1.0) > 1e-9
-    || Math.abs(wGradeShift - 6.0) > 1e-9
-    || Math.abs(wProduction - 4.0) > 1e-9
-    || Math.abs(wGradeAction - 0.15) > 1e-9
-    || Math.abs(gradePriorTons - 20000.0) > 1e-9
-    || Math.abs(gradeActionDeltaClip - 0.10) > 1e-9
-    || Math.abs(wWasteLag - 0.02) > 1e-9
-    || Math.abs(productionLagTolerance - 0.05) > 1e-9
-) {
-    throw new IllegalStateException(
-        "Reward parameters do not match " + rewardContractId
-    );
-}*/
-
+traceln(
+    "[REWARD_CONFIG] contract=" + rewardContractId
+    + " gradeActionEnabled=" + enableGradeActionReward
+    + " oreTarget=" + targetOreTonsShift
+    + " wasteTarget=" + targetWasteTonsShift
+    + " wasteWeight=" + wWasteShortfall
+);
 getEngine().setDefaultRandomGenerator(
     new java.util.Random(experimentSeed)
 );
@@ -1589,7 +1567,7 @@ lastDecisionTimeSec = time(SECOND);]]></StartupCode>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[String]]></Type>        
 						<InitialValue Class="CodeValue">
-							<Code><![CDATA["dispatch-reward-physical-v3"]]></Code>
+							<Code><![CDATA["dispatch-reward-physical-v4"]]></Code>
 						</InitialValue>
 					</Properties>
 				</Variable>
@@ -2437,6 +2415,54 @@ lastDecisionTimeSec = time(SECOND);]]></StartupCode>
 						<ParameterEditor>
 							<Id>1792579635046</Id>
 							<EditorContolType>CHECK_BOX</EditorContolType>
+							<MinSliderValue><![CDATA[0]]></MinSliderValue>
+							<MaxSliderValue><![CDATA[100]]></MaxSliderValue>
+							<DelimeterType>NO_DELIMETER</DelimeterType>
+						</ParameterEditor>
+					</Properties>                 
+				</Variable>
+				<Variable Class="Parameter">
+					<Id>1792626220025</Id>
+					<Name><![CDATA[enableGradeActionReward]]></Name>
+					<X>-680</X><Y>-460</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>false</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" ModificatorType="STATIC">
+						<Type><![CDATA[boolean]]></Type>
+						<UnitType><![CDATA[NONE]]></UnitType>
+						<SdArray>false</SdArray>
+						<DefaultValue Class="CodeValue">
+							<Code><![CDATA[false]]></Code>
+						</DefaultValue>
+						<ParameterEditor>
+							<Id>1792626220023</Id>
+							<EditorContolType>CHECK_BOX</EditorContolType>
+							<MinSliderValue><![CDATA[0]]></MinSliderValue>
+							<MaxSliderValue><![CDATA[100]]></MaxSliderValue>
+							<DelimeterType>NO_DELIMETER</DelimeterType>
+						</ParameterEditor>
+					</Properties>                 
+				</Variable>
+				<Variable Class="Parameter">
+					<Id>1792626243111</Id>
+					<Name><![CDATA[wWasteShortfall]]></Name>
+					<X>-680</X><Y>-430</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" ModificatorType="STATIC">
+						<Type><![CDATA[double]]></Type>
+						<UnitType><![CDATA[NONE]]></UnitType>
+						<SdArray>false</SdArray>
+						<DefaultValue Class="CodeValue">
+							<Code><![CDATA[4.0]]></Code>
+						</DefaultValue>
+						<ParameterEditor>
+							<Id>1792626243109</Id>
+							<EditorContolType>TEXT_BOX</EditorContolType>
 							<MinSliderValue><![CDATA[0]]></MinSliderValue>
 							<MaxSliderValue><![CDATA[100]]></MaxSliderValue>
 							<DelimeterType>NO_DELIMETER</DelimeterType>
@@ -3587,6 +3613,11 @@ DispatchRequest request = DispatchRequest.newBuilder()
     .putRewardComponents("grade_2h", pendingGrade2hReward)
     .putRewardComponents("grade_shift", pendingGradeShiftReward)
     .putRewardComponents("production", pendingProductionReward)
+    .putRewardComponents("waste", 0.0)
+	.putRewardComponents(
+	    "grade_action_enabled",
+	    enableGradeActionReward ? 1.0 : 0.0
+	)
     .putRewardComponents(
         "delta_wait_vehicle_seconds",
         deltaWaitVehicleSeconds
@@ -3603,7 +3634,9 @@ DispatchRequest request = DispatchRequest.newBuilder()
 	.setExperimentRunIndex(experimentRunIndex)
 	.setExperimentSeed(experimentSeed)
 	.setRewardContractId(rewardContractId)
+	.putAllRewardComponents(buildRewardConfigComponents())
     .build();
+    
 
 DispatchResponse response = rlClient.getDispatchResult(request);
 
@@ -7209,7 +7242,7 @@ double shiftGap =
     : targetGrade;
 
 pendingGradeShiftReward =
-    wGradeShift * gradeReward(shiftGap);
+    calculateShiftGradeReward(shiftGap);
 
 double productionFraction =
     crusherOreTons / targetOreTonsShift;
@@ -7218,7 +7251,20 @@ double productionShortfall =
     clip(1.0 - productionFraction, 0.0, 1.0);
 
 pendingProductionReward =
-    -wProduction * productionShortfall;
+    calculateOreShortfallReward(crusherOreTons);
+
+double wasteFraction =
+    targetWasteTonsShift > 0.0
+    ? totalWasteMoved / targetWasteTonsShift
+    : 0.0;
+
+double wasteShortfall =
+    targetWasteTonsShift > 0.0
+    ? clip(1.0 - wasteFraction, 0.0, 1.0)
+    : 0.0;
+
+double wasteReward =
+    calculateWasteShortfallReward(totalWasteMoved);
 
 double cumulativeWait = getCumulativeWaitVehicleSeconds();
 
@@ -7350,7 +7396,8 @@ double finalReward =
     + pendingGradeActionReward
     + pendingGrade2hReward
     + pendingGradeShiftReward
-    + pendingProductionReward;
+    + pendingProductionReward
+    + wasteReward;
       
 Observation terminalObs;
 if (usePhysicalObservation) {
@@ -7379,6 +7426,15 @@ DispatchRequest request = DispatchRequest.newBuilder()
     .putRewardComponents("grade_2h", pendingGrade2hReward)
     .putRewardComponents("grade_shift", pendingGradeShiftReward)
     .putRewardComponents("production", pendingProductionReward)
+    .putRewardComponents("waste", wasteReward)
+	.putRewardComponents("waste_tons_shift", totalWasteMoved)
+	.putRewardComponents("waste_target_tons", targetWasteTonsShift)
+	.putRewardComponents("waste_fraction_raw", wasteFraction)
+	.putRewardComponents("waste_shortfall", wasteShortfall)
+	.putRewardComponents(
+	    "grade_action_enabled",
+	    enableGradeActionReward ? 1.0 : 0.0
+	)
     .putRewardComponents(
         "delta_wait_vehicle_seconds",
         deltaWaitVehicleSeconds
@@ -7412,6 +7468,7 @@ DispatchRequest request = DispatchRequest.newBuilder()
 	.setExperimentRunIndex(experimentRunIndex)
 	.setExperimentSeed(experimentSeed)
 	.setRewardContractId(rewardContractId)
+	.putAllRewardComponents(buildRewardConfigComponents())
     .build();
 
 rlClient.getDispatchResult(request);
@@ -7458,37 +7515,21 @@ return clip(Math.abs(gap) / allowance, 0.0, 3.0);]]></Body>
 						<Name><![CDATA[action]]></Name>
 						<Type><![CDATA[int]]></Type>
 					</Parameter>
-					<Body><![CDATA[LoadSite site = getLoadSiteById(action);
-
-if (site == null) {
+					<Body><![CDATA[if (!enableGradeActionReward) {
     return 0.0;
 }
 
-if (!site.isOre) {
-    double shiftProgress =
-        clip(time(SECOND) / rlShiftSeconds, 0.0, 1.0);
+LoadSite site = getLoadSiteById(action);
 
-    double productionProgress =
-        clip(
-            crusherOreTons / targetOreTonsShift,
-            0.0,
-            1.0
-        );
-
-    double productionLag =
-        shiftProgress - productionProgress;
-
-    // 产量进度没有落后时允许选择WASTE；
-    // 落后超过5%时，WASTE受到完整惩罚。
-    double lagFactor = clip(
-        productionLag / productionLagTolerance,
-        0.0,
-        1.0
+if (site == null) {
+    throw new IllegalStateException(
+        "Invalid load site for grade action reward: " + action
     );
-
-    return -wWasteLag * lagFactor;
 }
 
+if (!site.isOre) {
+    return 0.0;
+}
 double expectedTons = Math.max(1.0, t.capacity);
 double priorTons = Math.max(gradePriorTons, expectedTons);
 
@@ -8161,6 +8202,96 @@ if(obsTraceCount<=3 || obsTraceCount%50==0) {
         +" tSec="+time(SECOND)+" ego="+ego.truckId
         +" mask="+a.values.subList(19,23));
 }]]></Body>
+				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1792626274567</Id>
+					<Name><![CDATA[calculateShiftGradeReward]]></Name>
+					<X>-450</X><Y>-580</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Parameter>
+						<Name><![CDATA[shiftGap]]></Name>
+						<Type><![CDATA[double]]></Type>
+					</Parameter>
+					<Body><![CDATA[return wGradeShift * gradeReward(shiftGap);]]></Body>
+				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1792626298791</Id>
+					<Name><![CDATA[calculateOreShortfallReward]]></Name>
+					<X>-450</X><Y>-550</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Parameter>
+						<Name><![CDATA[oreTons]]></Name>
+						<Type><![CDATA[double]]></Type>
+					</Parameter>
+					<Body><![CDATA[return -wProduction * clip(
+    1.0 - oreTons / targetOreTonsShift,
+    0.0,
+    1.0
+);]]></Body>
+				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1792626332640</Id>
+					<Name><![CDATA[calculateWasteShortfallReward]]></Name>
+					<X>-450</X><Y>-520</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Parameter>
+						<Name><![CDATA[wasteTons]]></Name>
+						<Type><![CDATA[double]]></Type>
+					</Parameter>
+					<Body><![CDATA[if (targetWasteTonsShift <= 0.0) {
+    return 0.0;
+}
+
+return -wWasteShortfall * clip(
+    1.0 - wasteTons / targetWasteTonsShift,
+    0.0,
+    1.0
+);]]></Body>
+				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[java.util.Map<String, Double>]]></ReturnType>
+					<Id>1792628306654</Id>
+					<Name><![CDATA[buildRewardConfigComponents]]></Name>
+					<X>-990</X><Y>-770</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Body><![CDATA[java.util.Map<String, Double> c = new java.util.LinkedHashMap<String, Double>();
+c.put("grade_action_enabled", enableGradeActionReward ? 1.0 : 0.0);
+c.put("config.waste_shortfall_weight", wWasteShortfall);
+c.put("config.target_waste_tons_shift", targetWasteTonsShift);
+c.put("config.num_trucks", (double) trucks.size());
+c.put("config.target_grade", targetGrade);
+c.put("config.grade_lower", gradeLowerBound);
+c.put("config.grade_upper", gradeUpperBound);
+c.put("config.wait_ref_seconds", waitRefSeconds);
+c.put("config.target_ore_tons_2h", targetOreTons2h);
+c.put("config.target_ore_tons_shift", targetOreTonsShift);
+c.put("config.w_wait", wWait);
+c.put("config.w_grade_2h", wGrade2h);
+c.put("config.w_grade_shift", wGradeShift);
+c.put("config.w_production", wProduction);
+c.put("config.w_grade_action", wGradeAction);
+c.put("config.grade_prior_tons", gradePriorTons);
+c.put("config.grade_action_delta_clip", gradeActionDeltaClip);
+return c;]]></Body>
 				</Function>
 			</Functions>
 			<AgentLinks>
@@ -20580,6 +20711,35 @@ return 0.70+singleServeTime*n;]]></Body>
 double start=t.obsLoadMaterialStart, end=start+tons;
 if(tons<=0 || tons>=gradeBlockTons || Math.abs(start-producedTons)>1e-5)
     throw new IllegalStateException("Grade observation order mismatch at "+siteName);
+// 判断本次已完成装载是否完全位于同一个品位块。
+// 1e-9 仅用于处理块边界的浮点舍入。
+int firstBlock = (int) Math.floor(
+    (start + 1e-9) / gradeBlockTons
+);
+int lastBlock = (int) Math.floor(
+    (end - 1e-9) / gradeBlockTons
+);
+
+if (firstBlock == lastBlock) {
+    double measuredGrade = t.payloadGrade;
+
+    if (!Double.isFinite(measuredGrade)
+        || measuredGrade
+            < Math.max(0.0, grade - gradeHalfRange) - 1e-6
+        || measuredGrade
+            > Math.min(1.0, grade + gradeHalfRange) + 1e-6) {
+
+        throw new IllegalStateException(
+            "Invalid completed grade measurement at " + siteName
+        );
+    }
+
+    // 纯块整车的已完成测量，直接更新该块的已知品位。
+    obsKnownGrades.put(firstBlock, measuredGrade);
+    obsLastKnownBlock = firstBlock;
+    obsLastKnownGrade = measuredGrade;
+    return;
+}
 double knownMetal=0.0, unknownTons=0.0;
 int unknownBlock=-1;
 for(double cursor=start;cursor<end-1e-9;) {
@@ -20603,8 +20763,24 @@ if(unknownBlock>=0) {
     obsKnownGrades.put(unknownBlock,measured);
     obsLastKnownBlock=unknownBlock;
     obsLastKnownGrade=measured;
-} else if(Math.abs(tons*t.payloadGrade-knownMetal)>1e-5) {
-    throw new IllegalStateException("Known grade mass mismatch at "+siteName);
+} else if (Math.abs(tons * t.payloadGrade - knownMetal) > 1e-5) {
+    double actualMetal = tons * t.payloadGrade;
+
+    throw new IllegalStateException(
+        "Known grade mass mismatch at " + siteName
+        + " truck=" + t.truckId
+        + " start=" + start
+        + " end=" + end
+        + " produced=" + producedTons
+        + " cursor=" + extractionCursorTons
+        + " tons=" + tons
+        + " truckGrade=" + t.payloadGrade
+        + " expectedGrade=" + (knownMetal / tons)
+        + " actualMetal=" + actualMetal
+        + " knownMetal=" + knownMetal
+        + " error=" + (actualMetal - knownMetal)
+        + " knownGrades=" + obsKnownGrades
+    );
 }]]></Body>
 				</Function>
 				<Function AccessType="default" StaticFunction="false">
@@ -22577,6 +22753,12 @@ statCycleTime.add( timeSpent );]]></Body>
 						<Code><![CDATA[true]]></Code>
 					</ParameterValue>
 				</Parameter>
+				<Parameter>
+					<ParameterName><![CDATA[enableGradeActionReward]]></ParameterName>
+				</Parameter>
+				<Parameter>
+					<ParameterName><![CDATA[wWasteShortfall]]></ParameterName>
+				</Parameter>
 			</Parameters>			
 			<PresentationProperties>
 				<EnableZoomAndPanning>true</EnableZoomAndPanning>
@@ -22702,6 +22884,12 @@ statCycleTime.add( timeSpent );]]></Body>
 					<Code><![CDATA[true]]></Code>
 				</Expression>
 			</FreeformParamValue>
+			<FreeformParamValue>	
+				<Id>1792626220025</Id>
+			</FreeformParamValue>
+			<FreeformParamValue>	
+				<Id>1792626243111</Id>
+			</FreeformParamValue>
 			<RangeVariationParamValue>	
 				<Id>1776757906246</Id>
 				<Type>FIXED</Type>
@@ -22807,6 +22995,14 @@ statCycleTime.add( timeSpent );]]></Body>
 			</RangeVariationParamValue>
 			<RangeVariationParamValue>	
 				<Id>1792579635048</Id>
+				<Type>FIXED</Type>
+			</RangeVariationParamValue>
+			<RangeVariationParamValue>	
+				<Id>1792626220025</Id>
+				<Type>FIXED</Type>
+			</RangeVariationParamValue>
+			<RangeVariationParamValue>	
+				<Id>1792626243111</Id>
 				<Type>FIXED</Type>
 			</RangeVariationParamValue>
 			<ModelTimeProperties>

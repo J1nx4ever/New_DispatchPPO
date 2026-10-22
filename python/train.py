@@ -34,6 +34,8 @@ from .reward_contract import (
 
 from .observation_contract import OBSERVATION_SCHEMA_ID, OBSERVATION_SIZE, OBSERVATION_ALP_PATH
 from .protocol_artifacts import verify_protocol_artifacts
+from .reward_config import RewardConfiguration, configuration_to_components
+from .alp_audit import validate_alp_contract
 
 class TrainingProgressCallback(BaseCallback):
     def __init__(
@@ -135,15 +137,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=50051)
     parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--grade-action', choices=['auto','on','off'], default='auto',
+                        help='Optional expectation for the AnyLogic RPC switch; auto follows the first request.')
     parser.add_argument('--callback-timeout', type=float, default=3600.0)
     parser.add_argument('--rpc-workers', type=int, default=8)
     parser.add_argument('--n-steps', type=int, choices=[128], default=128)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--learning-rate', type=float, default=3e-4)
     parser.add_argument('--ent-coef', type=float, default=0.01)
-    parser.add_argument('--resume-model', type=Path, help='Completed physical-v3 masked-policy run only; legacy/unmasked models rejected.')
+    parser.add_argument('--resume-model', type=Path, help='Completed physical-v4 masked-policy run with identical ablation configuration only.')
     parser.add_argument('--output-dir', type=Path)
-    parser.add_argument('--alp-path', type=Path, default=Path(__file__).resolve().parents[1] / OBSERVATION_ALP_PATH)
+    parser.add_argument('--alp-path', type=Path, help='Only used with optional --audit-alp.')
+    parser.add_argument('--audit-alp', action='store_true', help='Optional local ALP audit; never required for runtime configuration.')
     parser.add_argument('--audit-rollouts', action='store_true', help='Opt in to per-request events and detailed rollout snapshots.')
     parser.add_argument('--record-transitions', action='store_true', help='Opt in to per-transition JSONL logging.')
     return parser.parse_args()
@@ -221,7 +226,7 @@ def _load_seed_manifest(path: Path, episodes: int) -> list[tuple[int, int]]:
         raise SystemExit("seed manifest experiment_seed values must be unique")
     return rows
 
-def _validate_resume_contract(resume_model: Path) -> None:
+def _validate_resume_contract(resume_model: Path, reward_config=None) -> None:
     parent = resume_model.resolve().parent
     manifest_path = parent / "run_manifest.json"
     success_path = parent / "SUCCESS.json"
@@ -238,6 +243,8 @@ def _validate_resume_contract(resume_model: Path) -> None:
     for label, payload in (("run_manifest", manifest), ("SUCCESS", success)):
         if payload.get("reward_contract_id") != REWARD_CONTRACT_ID:
             raise SystemExit(f"resume {label} has an incompatible reward contract")
+        if reward_config is not None and payload.get("reward_configuration_fingerprint") != reward_config.fingerprint:
+            raise SystemExit(f"resume {label} has a different reward/ablation configuration")
         if payload.get("policy_contract_id") != POLICY_CONTRACT_ID:
             raise SystemExit(f"resume {label} lacks the compatible masked policy contract")
     if manifest.get("observation_schema_id") != OBSERVATION_SCHEMA_ID:
@@ -245,9 +252,9 @@ def _validate_resume_contract(resume_model: Path) -> None:
     if success.get("model_sha256") != _sha256(resume_model.resolve()):
         raise SystemExit("resume model hash does not match SUCCESS.json")
 
-def _manifest(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
+def _manifest(args: argparse.Namespace, output_dir: Path, reward_config: RewardConfiguration) -> dict[str, Any]:
     repository_root = Path(__file__).resolve().parents[1]
-    alp_path = args.alp_path.resolve()
+    alp_path = args.alp_path.resolve() if args.audit_alp else None
     proto_path = repository_root / "proto-src/src/main/proto/dispatch.proto"
     proto_jar_path = repository_root / "dist/DRL-Dispatching-1.2.0.jar"
     seed_manifest_path = args.anylogic_seed_manifest.resolve()
@@ -265,12 +272,16 @@ def _manifest(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
         "reward_contract_id": REWARD_CONTRACT_ID,
         "observation_schema_id": OBSERVATION_SCHEMA_ID,
         "observation_dimension": OBSERVATION_SIZE,
-        "alp_path": str(alp_path.resolve()),
+        "alp_path": str(alp_path) if alp_path else None,
+        "configuration_source": "anylogic_rpc",
+        "runtime_reward_configuration_received": True,
+        "runtime_reward_parameters": configuration_to_components(reward_config),
+        "local_alp_audit_requested": args.audit_alp,
         # A disk hash identifies the audited source, not the GUI's loaded model.
         "alp_runtime_verified": False,
         "windows_per_episode": WINDOWS_PER_EPISODE,
         "frozen_reward_parameters": FROZEN_REWARD_PARAMETERS,
-        "alp_sha256": _sha256(alp_path),
+        "alp_sha256": _sha256(alp_path) if alp_path else None,
         "proto_sha256": _sha256(proto_path),
         "proto_jar_sha256": _sha256(proto_jar_path),
         "anylogic_seed_manifest": str(seed_manifest_path),
@@ -294,6 +305,9 @@ def _manifest(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
         "record_transitions": args.record_transitions,
         "process_pid": os.getpid(),
         "algorithm": "PPO",
+        "reward_configuration": reward_config.to_dict(),
+        "reward_configuration_fingerprint": reward_config.fingerprint,
+        "ablation_variant": reward_config.variant,
         "policy_class": "python.masked_policy.DispatchMaskedPolicy",
         "policy_contract_id": POLICY_CONTRACT_ID,
         "action_mask_indices": [19, 20, 21, 22],
@@ -304,6 +318,11 @@ def _manifest(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
         "resume_model": str(resume_model) if resume_model else None,
         "resume_model_sha256": _sha256(resume_model) if resume_model else None,
     }
+
+def _validate_expected_variant(expected, reward_config):
+    if expected != 'auto' and (expected == 'on') != reward_config.grade_action_enabled:
+        raise SystemExit('--grade-action does not match AnyLogic runtime configuration')
+
 
 def main() -> None:
     args = parse_args()
@@ -322,64 +341,56 @@ def main() -> None:
             f"--resume-model does not exist or is not a file: "
             f"{args.resume_model}"
         )
-    if args.resume_model is not None:
-        _validate_resume_contract(args.resume_model)
     expected_episode_metadata = _load_seed_manifest(
         args.anylogic_seed_manifest, args.episodes
     )
 
     repository_root = Path(__file__).resolve().parents[1]
     verify_protocol_artifacts(repository_root)
-    from .alp_audit import validate_alp_contract
-    validate_alp_contract(args.alp_path)
-
-    run_stamp = time.strftime("%Y%m%d-%H%M%S")
-    output_dir = args.output_dir or Path("runs") / f"ppo-{run_stamp}"
-    _prepare_output_dir(output_dir)
-    manifest = _manifest(args, output_dir)
-    (output_dir / "run_manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    (output_dir / "tensorboard").mkdir(exist_ok=True)
-
-    rollout_debug = RolloutDebug(output_dir / "rollout_audit", source_kind="real_anylogic",
-                     audit_run_id=manifest["audit_run_id"],
-                     seed_manifest_path=args.anylogic_seed_manifest,
-                     capture_rollouts=args.audit_rollouts,
-                     expected_episode_identities=[
-                         {"run_index": i, "experiment_seed": s,
-                          "episode_id": f"{REWARD_CONTRACT_ID}-run-{i}-seed-{s}"}
-                         for i, s in expected_episode_metadata]) if args.audit_rollouts else None
+    local_audit = None
+    if args.audit_alp:
+        if args.alp_path is None:
+            raise SystemExit('--audit-alp requires --alp-path')
+        local_audit = validate_alp_contract(args.alp_path)
+    bridge = DispatchCallbackBridge(expected_episode_metadata=expected_episode_metadata,
+                                    runtime_configuration=True)
+    server = None
+    env = None
+    rollout_debug = None
+    manifest = None
     run_completed = False
-    bridge = DispatchCallbackBridge(
-        expected_episode_metadata=expected_episode_metadata,
-        rollout_audit=rollout_debug,
-        window_grade_bounds=True,
-    )
-    server = create_server(
-        bridge,
-        host=args.host,
-        port=args.port,
-        max_workers=args.rpc_workers,
-    )
-    server.start()
-
-    base_env = DispatchEnv(
-        bridge,
-        runner=ParameterVariationEpisodeRunner(total_episodes=args.episodes),
-        callback_timeout=args.callback_timeout,
-    )
-    env = Monitor(base_env, filename=str(output_dir / "monitor.csv"))
-
-    progress = TrainingProgressCallback(
-        target_episodes=args.episodes,
-        transitions_path=output_dir / "transitions.jsonl" if args.record_transitions else None,
-        ppo_seed=args.seed,
-    )
-    callbacks: list[BaseCallback] = [StageStatisticsCallback(output_dir), progress]
-    model: Optional[EpisodeBudgetPPO] = None
     try:
+        server = create_server(bridge, host=args.host, port=args.port, max_workers=args.rpc_workers)
+        server.start()
+        print(f'Dispatch gRPC listening on {args.host}:{args.port}; waiting for AnyLogic EPISODE_START configuration. No ALP upload needed.', flush=True)
+        reward_config = bridge.wait_for_configuration(timeout=args.callback_timeout)
+        _validate_expected_variant(args.grade_action, reward_config)
+        if local_audit is not None and local_audit['reward_configuration_fingerprint'] != reward_config.fingerprint:
+            raise RuntimeError('optional local audit disagrees with received runtime configuration')
+        if args.resume_model is not None:
+            _validate_resume_contract(args.resume_model, reward_config)
+        run_stamp = time.strftime('%Y%m%d-%H%M%S')
+        output_dir = args.output_dir or Path('runs') / REWARD_CONTRACT_ID / reward_config.variant / f'seed-{args.seed}' / f'ppo-{run_stamp}-{uuid.uuid4().hex[:8]}'
+        _prepare_output_dir(output_dir)
+        manifest = _manifest(args, output_dir, reward_config)
+        manifest['optional_local_alp_audit'] = local_audit
+        (output_dir/'run_manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+        (output_dir/'tensorboard').mkdir(exist_ok=True)
+        if args.audit_rollouts:
+            rollout_debug = RolloutDebug(output_dir/'rollout_audit', source_kind='real_anylogic',
+                audit_run_id=manifest['audit_run_id'],seed_manifest_path=args.anylogic_seed_manifest,
+                capture_rollouts=True,
+                expected_episode_identities=[dict(run_index=i,experiment_seed=seed,
+                    episode_id=f'{REWARD_CONTRACT_ID}-run-{i}-seed-{seed}') for i,seed in expected_episode_metadata])
+            bridge.rollout_audit = rollout_debug
+            rollout_debug.event('runtime_configuration_received', reward_configuration=reward_config.to_dict())
+        base_env = DispatchEnv(bridge,runner=ParameterVariationEpisodeRunner(total_episodes=args.episodes),
+                               callback_timeout=args.callback_timeout)
+        env = Monitor(base_env, filename=str(output_dir/'monitor.csv'))
+        progress = TrainingProgressCallback(args.episodes,
+            output_dir/'transitions.jsonl' if args.record_transitions else None,ppo_seed=args.seed)
+        callbacks = [StageStatisticsCallback(output_dir,reward_config,manifest),progress]
+        print(f'Received {reward_config.variant}, waste weight={reward_config.waste_shortfall_weight}; outputs: {output_dir}',flush=True)
         if args.resume_model is not None:
             print(f"Loading PPO model from {args.resume_model}", flush=True)
             model = EpisodeBudgetPPO.load(
@@ -417,8 +428,8 @@ def main() -> None:
 
         model._rollout_debug = rollout_debug
         print(
-            f"Dispatch gRPC listening on {args.host}:{args.port}. "
-            f"Start AnyLogic RL_Training with {args.episodes} replications; "
+            f"Training ready; runtime configuration locked. "
+            f"Episode budget: {args.episodes}; "
             f"outputs: {output_dir}",
             flush=True,
         )
@@ -447,6 +458,9 @@ def main() -> None:
         model_path = output_dir / "dispatch_ppo.zip"
         success = {
             "policy_contract_id": POLICY_CONTRACT_ID,
+            "reward_configuration": reward_config.to_dict(),
+            "reward_configuration_fingerprint": reward_config.fingerprint,
+            "ablation_variant": reward_config.variant,
             "status": "complete",
             "audit_run_id": manifest["audit_run_id"],
             "process_pid": os.getpid(),
@@ -466,9 +480,18 @@ def main() -> None:
         )
         run_completed = True
         print(f"Saved PPO model to {output_dir / 'dispatch_ppo.zip'}", flush=True)
+    except BaseException as exc:
+        if manifest is not None:
+            manifest.update(status='failed', error=f'{type(exc).__name__}: {exc}')
+            (output_dir/'run_manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+        raise
     finally:
-        env.close()
-        server.stop(grace=2).wait()
+        if env is not None:
+            env.close()
+        else:
+            bridge.close()
+        if server is not None:
+            server.stop(grace=2).wait()
         if rollout_debug is not None:
             rollout_debug.close(status="complete" if run_completed else "incomplete")
 

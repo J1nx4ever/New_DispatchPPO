@@ -6,16 +6,15 @@ Action rules are first-legal or a fresh untrained masked policy, for checking on
 from __future__ import annotations
 from contextlib import nullcontext
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import numpy as np
-from .alp_audit import validate_alp_contract
 from .dispatch_bridge import DispatchCallbackBridge
 from .dispatch_env import DispatchEnv
 from .dispatch_service import create_server
 from .episode_runner import ParameterVariationEpisodeRunner
 from .protocol_artifacts import verify_protocol_artifacts
+from .reward_config import RewardConfiguration
 
 
 def first_legal_action(mask):
@@ -86,22 +85,20 @@ def main():
     args = parser.parse_args()
     if args.callback_timeout <= 0:
         parser.error('--callback-timeout must be positive')
-    contract = validate_alp_contract()
     protocol = verify_protocol_artifacts()
-    root = Path(__file__).resolve().parents[1]
     args.output_dir.mkdir(parents=True, exist_ok=False)
     status = dict(status='waiting', source_kind='real_anylogic_smoke',
                   action_rule='first_legal_load_site', ppo_optimization=False,
-                  alp_runtime_verified=False, contract=contract,
+                  alp_runtime_verified=False, configuration_source="anylogic_rpc", contract=None,
                   record_transitions=args.record_transitions or args.capture_observations,
                   capture_observations=args.capture_observations,
-                  alp_sha256=hashlib.sha256((root/'anylogic/DRL-PPO.alp').read_bytes()).hexdigest(),
+                  alp_sha256=None,
                   protocol=protocol)
     status_path = args.output_dir/'status.json'
     def save_status():
         status_path.write_text(json.dumps(status, ensure_ascii=False, indent=2)+'\n')
     save_status()
-    bridge = DispatchCallbackBridge()
+    bridge = DispatchCallbackBridge(runtime_configuration=True)
     env = DispatchEnv(bridge, ParameterVariationEpisodeRunner(1), args.callback_timeout)
     action_selector = None
     server = None
@@ -121,6 +118,11 @@ def main():
         server = create_server(bridge, args.host, args.port)
         server.start()
         print(f'Communication check on {args.host}:{args.port}; action rule={args.action_rule}; manually start ONE AnyLogic run. No PPO updates.', flush=True)
+        reward_config = bridge.wait_for_configuration(timeout=args.callback_timeout)
+        status['contract'] = dict(reward_configuration=reward_config.to_dict(),
+                                  reward_configuration_fingerprint=reward_config.fingerprint,
+                                  ablation_variant=reward_config.variant)
+        save_status()
         records = ((args.output_dir/'transitions.jsonl').open('x', encoding='utf-8')
                    if args.record_transitions or args.capture_observations else nullcontext(None))
         with records as stream:

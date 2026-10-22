@@ -8,6 +8,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from .observation_contract import OBSERVATION_ALP_PATH, validate_schema_output
 from .reward_contract import FROZEN_REWARD_PARAMETERS, REWARD_CONTRACT_ID
+from .reward_config import RewardConfiguration
 
 PARAMETERS = {
     'numTrucks':'num_trucks', 'targetGrade':'target_grade', 'waitRefSeconds':'wait_ref_seconds',
@@ -16,8 +17,7 @@ PARAMETERS = {
     'targetWasteTonsShift':'target_waste_tons_shift', 'wWait':'w_wait',
     'wGrade2h':'w_grade_2h','wGradeShift':'w_grade_shift','wProduction':'w_production',
     'wGradeAction':'w_grade_action','gradePriorTons':'grade_prior_tons',
-    'gradeActionDeltaClip':'grade_action_delta_clip','wWasteLag':'w_waste_lag',
-    'productionLagTolerance':'production_lag_tolerance',
+    'gradeActionDeltaClip':'grade_action_delta_clip',
 }
 
 def load_alp(path):
@@ -88,11 +88,15 @@ def validate_alp_contract(path=None):
     if value('rewardContractId') != json.dumps(REWARD_CONTRACT_ID):
         raise ValueError('ALP rewardContractId missing or incompatible')
     if value('usePhysicalObservation')!='true': raise ValueError('physical observation is disabled')
+    runs = int(exp.findtext('NumberOfRuns'))
+    if runs <= 0 or exp.findtext('./ReplicationsProperties/UseReplication') != 'false':
+        raise ValueError('RL_Training requires positive run count and no extra replications')
     if exp.findtext('AllowParallelEvaluations')!='false': raise ValueError('serial experiment required')
     if root.findtext('./Model/ModelTimeUnit')!='Second': raise ValueError('re-audit experiment time units')
     if float(exp.findtext('./ModelTimeProperties/FinalTime'))<28800:
         raise ValueError('experiment stops before terminal callback')
     evidence=json.loads(Path(__file__).with_name('alp_contract_provenance.json').read_text())
+    reviewed=json.loads(Path(__file__).with_name('reward_v4_provenance.json').read_text())['reviewed_functions']
     if observation_source_digest(root)!=evidence['observation_source_sha256']:
         raise ValueError('observation functions changed; re-extract and re-audit schema')
     for c in root.iter('ActiveObjectClass'):
@@ -100,14 +104,19 @@ def validate_alp_contract(path=None):
         for f in c.findall('./Functions/Function'):
             key=c.findtext('Name')+'.'+f.findtext('Name')
             digest=hashlib.sha256((f.findtext('Body') or '').encode()).hexdigest()
-            if evidence['unchanged_function_body_sha256'].get(key)!=digest:
+            if reviewed.get(key,{}).get('sha256',evidence['unchanged_function_body_sha256'].get(key))!=digest:
                 raise ValueError(f'ALP business function changed: {key}; re-audit required')
     deterministic = value('deterministicCheck')
     if deterministic not in ('true', 'false'):
         raise ValueError(f'RL_Training deterministicCheck must be true or false, got {deterministic!r}')
     if value('currentDispatchPolicy') != '3':
         raise ValueError('RL_Training requires currentDispatchPolicy=3')
-    return dict(observation_schema='dispatch.physical.v3',dimension=1519,
+    enabled = value('enableGradeActionReward')
+    if enabled not in ('true','false'):
+        raise ValueError('enableGradeActionReward must be literal true or false')
+    config=RewardConfiguration(enabled=='true',float(value('wWasteShortfall')),float(value('targetWasteTonsShift')))
+    return dict(experiment_runs=runs, reward_configuration=config.to_dict(), reward_configuration_fingerprint=config.fingerprint,
+                ablation_variant=config.variant, observation_schema='dispatch.physical.v3',dimension=1519,
                 reward_contract=REWARD_CONTRACT_ID,alp_runtime_verified=False,
                 use_physical_observation=True, deterministic_check=deterministic == 'true')
 

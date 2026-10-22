@@ -36,10 +36,10 @@ def windows():
 
 def request(kind=pb.EPISODE_START, seq=0, action=-1, time=0):
     terminal=kind==pb.EPISODE_END
-    components=dict(wait=0,production=0,grade_2h=0,grade_shift=0,grade_action=0,delta_wait_vehicle_seconds=0)
+    components=dict(wait=0,production=0,grade_2h=0,grade_shift=0,grade_action=0,waste=0,grade_action_enabled=0,delta_wait_vehicle_seconds=0)
     if terminal:
         components.update(grade_2h=4,grade_shift=6,grade_gap_shift=0,grade_shift_reward_raw=1,
-                          ore_tons_shift=16000,production_fraction_raw=1,production_shortfall=0,shift_grade=.27)
+                          ore_tons_shift=16000,production_fraction_raw=1,production_shortfall=0,shift_grade=.27,waste_tons_shift=4000,waste_target_tons=4000,waste_fraction_raw=1,waste_shortfall=0)
     return pb.DispatchRequest(truck_id=-1 if terminal else 0,
         obs=pb.Observation(schema_id=oc.OBSERVATION_SCHEMA_ID,values=obs(terminal)),
         episode_id='e1',request_id=f'e1-{seq}',kind=kind,decision_sequence=seq,

@@ -9,6 +9,8 @@ from typing import Optional, Sequence
 import numpy as np
 
 from .generated import dispatch_pb2
+from .reward_config import RewardConfiguration, configuration_from_components
+from .reward_contract import ADDITIVE_COMPONENTS
 from .observation_contract import OBSERVATION_SCHEMA_ID, validate_observation
 from .reward_contract import (
     REWARD_CONTRACT_ID,
@@ -33,6 +35,7 @@ class CallbackTicket:
     received_ns: int = field(default_factory=time.perf_counter_ns)
     response: Optional[dispatch_pb2.DispatchResponse] = None
     response_ready: threading.Event = field(default_factory=threading.Event)
+    error: Optional[Exception] = None
 
 
 def observation_array(request: dispatch_pb2.DispatchRequest) -> np.ndarray:
@@ -58,6 +61,8 @@ class DispatchCallbackBridge:
         expected_episode_metadata: Optional[Sequence[tuple[int, int]]] = None,
         rollout_audit=None,
         window_grade_bounds: bool = True,
+        reward_config: Optional[RewardConfiguration] = None,
+        runtime_configuration: bool = False,
     ) -> None:
         self._incoming: queue.Queue[CallbackTicket] = queue.Queue(queue_capacity)
         self._lock = threading.Lock()
@@ -78,6 +83,11 @@ class DispatchCallbackBridge:
         self._closed = False
         self.rollout_audit = rollout_audit
         self.window_grade_bounds = window_grade_bounds
+        self.runtime_configuration = runtime_configuration
+        self.reward_config = reward_config if runtime_configuration else (reward_config or RewardConfiguration())
+        self._configuration_ready = threading.Event()
+        if self.reward_config is not None:
+            self._configuration_ready.set()
 
     def submit_callback(
         self,
@@ -113,6 +123,8 @@ class DispatchCallbackBridge:
             raise TimeoutError(
                 f"timed out waiting for action for request_id={request.request_id}"
             )
+        if ticket.error is not None:
+            raise ticket.error
         assert ticket.response is not None
         return ticket.response
 
@@ -156,8 +168,21 @@ class DispatchCallbackBridge:
             ),
         )
 
+    def wait_for_configuration(self, timeout=None):
+        if not self._configuration_ready.wait(timeout):
+            raise TimeoutError('waiting for AnyLogic EPISODE_START runtime configuration')
+        if self._closed:
+            raise RuntimeError('bridge closed before runtime configuration was consumed')
+        return self.reward_config
+
     def close(self) -> None:
-        self._closed = True
+        with self._lock:
+            self._closed = True
+            for ticket in self._tickets_by_request_id.values():
+                if not ticket.response_ready.is_set():
+                    ticket.error = RuntimeError('training service closed before action response')
+                    ticket.response_ready.set()
+            self._configuration_ready.set()
 
     @staticmethod
     def _audit_info(request):
@@ -174,11 +199,25 @@ class DispatchCallbackBridge:
                 "observation_schema_id": request.obs.schema_id if request.HasField("obs") else None}
 
     def _register(self, request: dispatch_pb2.DispatchRequest) -> CallbackTicket:
-        self._validate_request(request, grade_bounds=self.window_grade_bounds)
+        candidate = self.reward_config
+        if self.runtime_configuration:
+            try:
+                incoming_config = configuration_from_components(request.reward_components)
+            except ValueError as exc:
+                raise ProtocolError(str(exc)) from exc
+            if candidate is None:
+                if request.kind != dispatch_pb2.EPISODE_START:
+                    raise ProtocolError('first configuration must arrive with EPISODE_START')
+                candidate = incoming_config
+            elif incoming_config != candidate:
+                raise ProtocolError('AnyLogic reward configuration changed during this run')
+        self._validate_request(request, grade_bounds=self.window_grade_bounds, config=candidate)
         serialized = request.SerializeToString(deterministic=True)
         with self._lock:
             if self._closed:
                 raise RuntimeError("bridge is closed")
+            if self.runtime_configuration and self.reward_config is not None and candidate != self.reward_config:
+                raise ProtocolError("concurrent runtime configuration changed")
             existing = self._tickets_by_request_id.get(request.request_id)
             if existing is not None:
                 if self._request_bytes[request.request_id] != serialized:
@@ -271,7 +310,10 @@ class DispatchCallbackBridge:
             self._request_bytes[request.request_id] = serialized
             self._last_sequence_by_episode[request.episode_id] = request.decision_sequence
             self._last_ticket_by_episode[request.episode_id] = ticket
+            if self.runtime_configuration and self.reward_config is None:
+                self.reward_config = candidate
         self._incoming.put(ticket)
+        self._configuration_ready.set()
         return ticket
 
     @staticmethod
@@ -285,7 +327,7 @@ class DispatchCallbackBridge:
         ticket.response_ready.set()
 
     @staticmethod
-    def _validate_request(request: dispatch_pb2.DispatchRequest, *, grade_bounds: bool = False) -> None:
+    def _validate_request(request: dispatch_pb2.DispatchRequest, *, grade_bounds: bool = False, config: Optional[RewardConfiguration] = None) -> None:
         if not request.episode_id or not request.request_id:
             raise ProtocolError("episode_id and request_id are required")
         if request.decision_sequence < 0:
@@ -306,7 +348,7 @@ class DispatchCallbackBridge:
         if request.kind != dispatch_pb2.EPISODE_END and request.sim_time_seconds >= SHIFT_SECONDS:
             raise ProtocolError("action request cannot occur at or after shift cutoff")
         if request.kind == dispatch_pb2.EPISODE_START:
-            if request.closed_windows or any(request.reward_components.values()):
+            if request.closed_windows or any(request.reward_components.get(k,0) != 0 for k in (*ADDITIVE_COMPONENTS,"delta_wait_vehicle_seconds")):
                 raise ProtocolError("EPISODE_START cannot carry prior transition components/windows")
             if request.terminated or request.truncated:
                 raise ProtocolError("EPISODE_START cannot be terminal")
@@ -333,6 +375,10 @@ class DispatchCallbackBridge:
             raise ProtocolError(
                 "reward_components missing delta_wait_vehicle_seconds"
             )
+        if request.kind != dispatch_pb2.EPISODE_END and any(request.reward_components.get(k,0) != 0 for k in ("waste","grade_shift","production")):
+            raise ProtocolError("terminal-only reward appeared before episode end")
+        if request.previous_action == 3 and request.reward_components.get('grade_action', 0) != 0:
+            raise ProtocolError('WASTE action cannot carry grade_action reward in v4')
         if request.kind == dispatch_pb2.EPISODE_END:
             terminal_fields = {
                 "grade_gap_shift",
@@ -353,7 +399,7 @@ class DispatchCallbackBridge:
             validate_reward_accounting(
                 request.transition_reward,
                 dict(request.reward_components),
-                windows,
+                windows, config=config,
             )
         except ValueError as exc:
             raise ProtocolError(str(exc)) from exc

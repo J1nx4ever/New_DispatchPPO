@@ -8,5 +8,5 @@ grpcio==1.78.0
 grpcio-tools==1.78.0
 protobuf==6.33.5
 tensorboard==2.21.0
-# Tests used pytest from /tmp; it is not installed into the Conda environment.
+# pytest is used by the test suite.
 pytest==8.4.2
