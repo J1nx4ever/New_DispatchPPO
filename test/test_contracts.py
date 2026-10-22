@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from python import observation_contract as oc
 from python import reward_contract as rc
-from python.alp_audit import validate_alp_contract
+from python.alp_audit import validate_alp_contract, validate_alp_sources, load_alp
 from python.dispatch_bridge import DispatchCallbackBridge, ProtocolError, observation_array
 from python.dispatch_env import DispatchEnv
 from python.dispatch_service import DispatchService
@@ -38,12 +38,12 @@ def request(kind=pb.EPISODE_START, seq=0, action=-1, time=0):
     terminal=kind==pb.EPISODE_END
     components=dict(wait=0,production=0,grade_2h=0,grade_shift=0,grade_action=0,waste=0,grade_action_enabled=0,delta_wait_vehicle_seconds=0)
     if terminal:
-        components.update(grade_2h=4,grade_shift=6,grade_gap_shift=0,grade_shift_reward_raw=1,
+        components.update(grade_2h=4,grade_shift=0,grade_gap_shift=0,grade_shift_reward_raw=1,
                           ore_tons_shift=16000,production_fraction_raw=1,production_shortfall=0,shift_grade=.27,waste_tons_shift=4000,waste_target_tons=4000,waste_fraction_raw=1,waste_shortfall=0)
     return pb.DispatchRequest(truck_id=-1 if terminal else 0,
         obs=pb.Observation(schema_id=oc.OBSERVATION_SCHEMA_ID,values=obs(terminal)),
         episode_id='e1',request_id=f'e1-{seq}',kind=kind,decision_sequence=seq,
-        action_required=not terminal,previous_action=action,transition_reward=10 if terminal else 0,
+        action_required=not terminal,previous_action=action,transition_reward=4 if terminal else 0,
         reward_components=components,sim_time_seconds=time,sim_time_delta_seconds=time,
         terminated=terminal,experiment_run_index=1,experiment_seed=202610160011,
         reward_contract_id=rc.REWARD_CONTRACT_ID,closed_windows=windows() if terminal else [])
@@ -59,8 +59,12 @@ def test_core_unchanged():
     assert hashlib.sha256((ROOT/'python/episode_budget_ppo.py').read_bytes()).hexdigest()==CORE_HASH
 
 
-def test_alp_and_artifacts():
-    assert validate_alp_contract()['alp_runtime_verified'] is False
+def test_alp_and_artifacts(tmp_path):
+    from test_alp_experiment import model, write_model
+    root, _, _ = load_alp(ROOT/'anylogic/DRL-PPO.alp')
+    assert validate_alp_sources(root)['reviewed_function_count'] > 0
+    migrated, _, _ = model()
+    assert validate_alp_contract(write_model(tmp_path, migrated))['alp_runtime_verified'] is False
     assert verify_protocol_artifacts()['java_python_descriptor_equal']
     assert len(oc.FIELD_NAMES)==len(set(oc.FIELD_NAMES))==1519
     assert oc.FIELD_NAMES[19:23]==tuple(f'actionMask.{i}' for i in range(4))
@@ -112,7 +116,7 @@ def test_reward_current_alp_math():
     rc.validate_reward_accounting(-.5,c,[])
     for w in windows(): rc.validate_window_summary(rc.window_summary_to_dict(w))
     r=request(pb.EPISODE_END,1,0,28800)
-    rc.validate_reward_accounting(10,dict(r.reward_components),[rc.window_summary_to_dict(w) for w in r.closed_windows])
+    rc.validate_reward_accounting(4,dict(r.reward_components),[rc.window_summary_to_dict(w) for w in r.closed_windows])
 
 
 @pytest.mark.parametrize('problem',['sum','diagnostic_nan','wait','window','terminal','missing'])
@@ -184,7 +188,7 @@ def test_real_grpc_gym_lifecycle():
                 assert reward==0 and not term and not trunc and info['previous_action']==2
                 with pytest.raises(RuntimeError): env.reset()
                 x,reward,term,trunc,info=env.step(1)
-                assert reward==10 and term and not trunc and x[17]==1 and x[19:27].sum()==0
+                assert reward==4 and term and not trunc and x[17]==1 and x[19:27].sum()==0
                 assert info['previous_action']==1
                 with pytest.raises(RuntimeError): env.step(0)
                 final,info=env.reset(); assert info['experiment_complete'] and np.array_equal(final,x)

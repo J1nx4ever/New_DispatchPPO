@@ -16,6 +16,9 @@ import numpy as np
 
 OBSERVATION_SCHEMA_ID = "dispatch.physical.v3"
 OBSERVATION_SIZE = 1519
+# Agent-side dimension only: the raw 1519D gRPC contract is never widened.
+# The projection wrapper appends six FIFO-only window features.
+AGENT_OBSERVATION_SIZE = OBSERVATION_SIZE + 6
 OBSERVATION_ALP_PATH = "anylogic/DRL-PPO.alp"
 SCHEMA = tuple(json.loads(Path(__file__).with_name("observation_schema.json").read_text()))
 FIELD_NAMES = tuple(field["name"] for field in SCHEMA)

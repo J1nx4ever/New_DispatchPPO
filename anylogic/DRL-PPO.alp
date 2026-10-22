@@ -1300,7 +1300,7 @@ lastDecisionTimeSec = time(SECOND);]]></StartupCode>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[double]]></Type>        
 						<InitialValue Class="CodeValue">
-							<Code><![CDATA[6]]></Code>
+							<Code><![CDATA[0]]></Code>
 						</InitialValue>
 					</Properties>
 				</Variable>
@@ -1462,7 +1462,7 @@ lastDecisionTimeSec = time(SECOND);]]></StartupCode>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[double]]></Type>        
 						<InitialValue Class="CodeValue">
-							<Code><![CDATA[0.15]]></Code>
+							<Code><![CDATA[0]]></Code>
 						</InitialValue>
 					</Properties>
 				</Variable>
@@ -1567,7 +1567,7 @@ lastDecisionTimeSec = time(SECOND);]]></StartupCode>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[String]]></Type>        
 						<InitialValue Class="CodeValue">
-							<Code><![CDATA["dispatch-reward-physical-v4"]]></Code>
+							<Code><![CDATA["dispatch-reward-v1.0"]]></Code>
 						</InitialValue>
 					</Properties>
 				</Variable>

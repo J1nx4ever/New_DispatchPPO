@@ -23,6 +23,10 @@ from .dispatch_service import create_server
 from .episode_runner import ParameterVariationEpisodeRunner
 from .episode_budget_ppo import EpisodeBudgetPPO
 from .masked_policy import DispatchMaskedPolicy, POLICY_CONTRACT_ID
+from .observation_projection_wrapper import (
+    FIFOObservationWrapper,
+    PROJECTION_CONTRACT_ID,
+)
 from .stage_statistics import StageStatisticsCallback
 from .rollout_debug import RolloutDebug
 from .reward_contract import (
@@ -32,7 +36,9 @@ from .reward_contract import (
 )
 
 
-from .observation_contract import OBSERVATION_SCHEMA_ID, OBSERVATION_SIZE, OBSERVATION_ALP_PATH
+from .observation_contract import (
+    AGENT_OBSERVATION_SIZE, OBSERVATION_SCHEMA_ID, OBSERVATION_SIZE, OBSERVATION_ALP_PATH,
+)
 from .protocol_artifacts import verify_protocol_artifacts
 from .reward_config import RewardConfiguration, configuration_to_components
 from .alp_audit import validate_alp_contract
@@ -145,12 +151,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--learning-rate', type=float, default=3e-4)
     parser.add_argument('--ent-coef', type=float, default=0.01)
-    parser.add_argument('--resume-model', type=Path, help='Completed physical-v4 masked-policy run with identical ablation configuration only.')
+    parser.add_argument('--resume-model', type=Path, help='Completed Reward V1.0 masked-policy run with identical configuration only.')
     parser.add_argument('--output-dir', type=Path)
     parser.add_argument('--alp-path', type=Path, help='Only used with optional --audit-alp.')
     parser.add_argument('--audit-alp', action='store_true', help='Optional local ALP audit; never required for runtime configuration.')
     parser.add_argument('--audit-rollouts', action='store_true', help='Opt in to per-request events and detailed rollout snapshots.')
     parser.add_argument('--record-transitions', action='store_true', help='Opt in to per-transition JSONL logging.')
+    parser.add_argument('--obs-mode', choices=('f0', 'p0-smoke'), default='f0',
+                        help='f0: raw 1519D baseline. p0-smoke: append six FIFO-only '
+                             'projection features (pipeline smoke only, never official F1).')
     return parser.parse_args()
 
 
@@ -226,7 +235,9 @@ def _load_seed_manifest(path: Path, episodes: int) -> list[tuple[int, int]]:
         raise SystemExit("seed manifest experiment_seed values must be unique")
     return rows
 
-def _validate_resume_contract(resume_model: Path, reward_config=None) -> None:
+def _validate_resume_contract(
+    resume_model: Path, reward_config=None, obs_mode: str = 'f0'
+) -> None:
     parent = resume_model.resolve().parent
     manifest_path = parent / "run_manifest.json"
     success_path = parent / "SUCCESS.json"
@@ -249,6 +260,17 @@ def _validate_resume_contract(resume_model: Path, reward_config=None) -> None:
             raise SystemExit(f"resume {label} lacks the compatible masked policy contract")
     if manifest.get("observation_schema_id") != OBSERVATION_SCHEMA_ID:
         raise SystemExit("resume run has an incompatible observation schema")
+    expected_dimension = OBSERVATION_SIZE if obs_mode == 'f0' else AGENT_OBSERVATION_SIZE
+    for label, payload in (("run_manifest", manifest), ("SUCCESS", success)):
+        # Runs predating the projection wrapper are raw 1519D F0 runs.
+        resumed_mode = payload.get("agent_observation_mode", "f0")
+        resumed_dimension = payload.get("agent_observation_dimension", OBSERVATION_SIZE)
+        if resumed_mode != obs_mode or resumed_dimension != expected_dimension:
+            raise SystemExit(
+                f"resume {label} uses agent observation mode {resumed_mode!r} "
+                f"({resumed_dimension}D), which cannot be resumed as "
+                f"{obs_mode} ({expected_dimension}D)"
+            )
     if success.get("model_sha256") != _sha256(resume_model.resolve()):
         raise SystemExit("resume model hash does not match SUCCESS.json")
 
@@ -270,8 +292,17 @@ def _manifest(args: argparse.Namespace, output_dir: Path, reward_config: RewardC
         "python_version": platform.python_version(),
         "stable_baselines3_version": stable_baselines3.__version__,
         "reward_contract_id": REWARD_CONTRACT_ID,
+        "reward_spec_sha256": _sha256(repository_root / 'python/reward_v1_configuration.json'),
+        "observation_schema_sha256": _sha256(repository_root / 'python/observation_schema.json'),
         "observation_schema_id": OBSERVATION_SCHEMA_ID,
         "observation_dimension": OBSERVATION_SIZE,
+        "agent_observation_mode": args.obs_mode,
+        "agent_observation_dimension": (
+            OBSERVATION_SIZE if args.obs_mode == 'f0' else AGENT_OBSERVATION_SIZE
+        ),
+        "projection_contract_id": (
+            None if args.obs_mode == 'f0' else PROJECTION_CONTRACT_ID
+        ),
         "alp_path": str(alp_path) if alp_path else None,
         "configuration_source": "anylogic_rpc",
         "runtime_reward_configuration_received": True,
@@ -341,6 +372,11 @@ def main() -> None:
             f"--resume-model does not exist or is not a file: "
             f"{args.resume_model}"
         )
+    if args.obs_mode == 'p0-smoke' and args.resume_model is not None:
+        raise SystemExit(
+            "--obs-mode p0-smoke cannot resume a checkpoint; F0 and F1 must be "
+            "trained independently from scratch"
+        )
     expected_episode_metadata = _load_seed_manifest(
         args.anylogic_seed_manifest, args.episodes
     )
@@ -368,7 +404,7 @@ def main() -> None:
         if local_audit is not None and local_audit['reward_configuration_fingerprint'] != reward_config.fingerprint:
             raise RuntimeError('optional local audit disagrees with received runtime configuration')
         if args.resume_model is not None:
-            _validate_resume_contract(args.resume_model, reward_config)
+            _validate_resume_contract(args.resume_model, reward_config, args.obs_mode)
         run_stamp = time.strftime('%Y%m%d-%H%M%S')
         output_dir = args.output_dir or Path('runs') / REWARD_CONTRACT_ID / reward_config.variant / f'seed-{args.seed}' / f'ppo-{run_stamp}-{uuid.uuid4().hex[:8]}'
         _prepare_output_dir(output_dir)
@@ -386,6 +422,8 @@ def main() -> None:
             rollout_debug.event('runtime_configuration_received', reward_configuration=reward_config.to_dict())
         base_env = DispatchEnv(bridge,runner=ParameterVariationEpisodeRunner(total_episodes=args.episodes),
                                callback_timeout=args.callback_timeout)
+        if args.obs_mode == 'p0-smoke':
+            base_env = FIFOObservationWrapper(base_env)
         env = Monitor(base_env, filename=str(output_dir/'monitor.csv'))
         progress = TrainingProgressCallback(args.episodes,
             output_dir/'transitions.jsonl' if args.record_transitions else None,ppo_seed=args.seed)
@@ -470,6 +508,9 @@ def main() -> None:
             "training_finish": finish_audit,
             "reward_contract_id": REWARD_CONTRACT_ID,
             "observation_schema_id": OBSERVATION_SCHEMA_ID,
+            "agent_observation_mode": args.obs_mode,
+            "agent_observation_dimension": manifest["agent_observation_dimension"],
+            "projection_contract_id": manifest["projection_contract_id"],
             "anylogic_seed_manifest_sha256": _sha256(
                 args.anylogic_seed_manifest.resolve()
             ),

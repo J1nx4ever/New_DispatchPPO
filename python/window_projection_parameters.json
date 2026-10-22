@@ -1,0 +1,38 @@
+{
+  "projection_contract_id": "dispatch.physical.v3+fifo-p0-dev.v2",
+  "schema_id": "dispatch.physical.v3",
+  "raw_dimension": 1519,
+  "shift_seconds": 28800.0,
+  "window_seconds": 7200.0,
+  "window_count": 4,
+  "feature_scale_tons": 5000.0,
+  "fifo_slots": 16,
+  "fifo_base": 1391,
+  "fifo_stride": 3,
+  "fifo_tons_scale": 500.0,
+  "crusher_rate_scale_tph": 2500.0,
+  "alp_fifo_balance_atol_tons": 1e-05,
+  "clock_arithmetic_atol_seconds": 1e-09,
+  "conservation_atol_tons": 2e-06,
+  "conservation_rtol": 1e-08,
+  "source": {
+    "alp_path": "anylogic/DRL-PPO.alp",
+    "alp_sha256": "f69fea9e0853270637c85b661a65af21d25cb09403f56765bdc9e4c6bb8ca691",
+    "schema_path": "python/observation_schema.json",
+    "schema_sha256": "01d0f9af3c417229ef7f77f194b2d4b145b33452b2dfff98b6cb5cc255efd753",
+    "audit_date": "2026-10-22",
+    "reward_contract_id": "dispatch-reward-v1.0",
+    "observation_source_sha256": "ba2cf5479b7530cb37273148df7577024f04a98f1ee7170cad725cb89b9645d0",
+    "locations": {
+      "shift/window": "Main.collectPhysicalObservation, ALP:8100-8139; Main.rlShiftSeconds/rlWindowSeconds",
+      "fifo_tons/grade/order": "DumpSite.appendCrusherFifoObservation, ALP:17816-17850",
+      "rate": "DumpSite.appendDispatchObservation, ALP:17777-17814",
+      "fifo_balance_atol": "DumpSite.appendCrusherFifoObservation, ALP:17842",
+      "float32": "Main.buildPhysicalObservation, ALP:8079-8095; proto/dispatch.proto Observation.values"
+    },
+    "feature_scale_reason": "Fixed 5000t = reference 2500t/h x 2h; metal is also divided by 5000, without clipping.",
+    "fitting_data": null,
+    "fitting": "No fitted parameters or future labels.",
+    "numerics": "IEEE754 float32 half-ULP bounds plus 1e-9s double arithmetic tolerance; buffer tolerance adds ALP 1e-5t plus each encoded mass half-ULP. Conservation tolerances 2e-6t / 1e-8 relative are numerical assertion choices, not physical or fitted parameters. Fluid integration retains all positive tails; ALP uses 1e-9t loop/removal epsilon, so bitwise parity below that scale is not claimed."
+  }
+}

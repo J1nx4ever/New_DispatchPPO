@@ -1,3 +1,7 @@
+# 当前迁移说明
+
+Reward V1.0的冻结参数、ALP手动修改位置及评估握手规范见[迁移文档](reward_v1_freeze.md)。训练、通信检查及评估默认均以RPC完整配置为准；评估仅在显式 `--audit-alp --alp-path ...` 时审计本地ALP。以下历史记录中的V4配置可变范围不再适用于V1.0冻结实验。
+
 AnyLogic运行时配置握手：无需重复上传ALP
 
 训练和通信检查默认只使用AnyLogic通过gRPC传来的配置，不读取本地ALP，不运行本地源码审计。修改开关后重启Python服务及对应的AnyLogic实验即可，默认--grade-action auto自动识别组别。保留通信契约和运行一致性检查，它们不是ALP文件审核。

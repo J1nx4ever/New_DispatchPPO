@@ -1,6 +1,7 @@
 """Mask probability/gradient checks and real PPO updates on synthetic episodes."""
 import hashlib
 import json
+import sys
 from pathlib import Path
 import gymnasium as gym
 from gymnasium import spaces
@@ -199,6 +200,59 @@ def test_unmasked_checkpoint_metadata_rejected_before_loading(tmp_path):
     payload['policy_contract_id']=POLICY_CONTRACT_ID
     for name in ['run_manifest.json','SUCCESS.json']:(tmp_path/name).write_text(json.dumps(payload))
     _validate_resume_contract(checkpoint) # This checks metadata only, not ZIP loading.
+
+
+def augmented_observation_space():
+    from python.dispatch_bridge import DispatchCallbackBridge
+    from python.dispatch_env import DispatchEnv
+    from python.observation_projection_wrapper import FIFOObservationWrapper
+    return FIFOObservationWrapper(DispatchEnv(DispatchCallbackBridge())).observation_space
+
+
+@pytest.mark.parametrize('dim',[1524,1526])
+def test_policy_rejects_unexpected_observation_dimensions(dim):
+    space=spaces.Box(np.zeros(dim,dtype=np.float32),np.ones(dim,dtype=np.float32))
+    with pytest.raises(ValueError,match='1519D physical'):
+        DispatchMaskedPolicy(space,spaces.Discrete(4),lambda _:3e-4,net_arch=dict(pi=[8],vf=[8]))
+
+
+def test_policy_masks_augmented_observation_at_raw_slice():
+    th.set_num_threads(1)
+    space=augmented_observation_space()
+    p=DispatchMaskedPolicy(space,spaces.Discrete(4),lambda _:3e-4,net_arch=dict(pi=[8],vf=[8]))
+    o=th.zeros(2,space.shape[0]);o[:,19:23]=th.tensor([[1.,0.,1.,0.],[0.,1.,0.,0.]])
+    with th.no_grad():p.action_net.bias.copy_(th.tensor([100.,200.,300.,400.]))
+    actions,values,logp=p(o)
+    mask=o[:,19:23].bool()
+    assert th.all(mask.gather(1,actions[:,None]))
+    probs=p.get_distribution(o).distribution.probs.clone()
+    assert th.all(probs[~mask]==0)
+    th.testing.assert_close(probs.sum(1),th.ones(2))
+    p.evaluate_actions(o,actions)
+    o[0,1524]=float('nan')
+    with pytest.raises(ValueError,match='finite'):p.get_distribution(o)
+
+
+def test_resume_rejects_agent_observation_mode_mismatch(tmp_path):
+    checkpoint=tmp_path/'model.zip';checkpoint.write_bytes(b'augmented model fixture')
+    payload=dict(reward_contract_id=REWARD_CONTRACT_ID,policy_contract_id=POLICY_CONTRACT_ID,
+                 observation_schema_id='dispatch.physical.v3',agent_observation_mode='p0-smoke',
+                 agent_observation_dimension=1525,
+                 model_sha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest())
+    for name in ['run_manifest.json','SUCCESS.json']:(tmp_path/name).write_text(json.dumps(payload))
+    _validate_resume_contract(checkpoint,None,'p0-smoke')
+    with pytest.raises(SystemExit,match='agent observation mode'):
+        _validate_resume_contract(checkpoint,None,'f0')
+
+
+def test_p0_smoke_mode_cannot_resume(tmp_path,monkeypatch):
+    from python.train import main
+    checkpoint=tmp_path/'model.zip';checkpoint.write_bytes(b'x')
+    seeds=tmp_path/'seeds.json';seeds.write_text(json.dumps([dict(run_index=1,experiment_seed=11)]))
+    monkeypatch.setattr(sys,'argv',['train','--episodes','1','--anylogic-seed-manifest',str(seeds),
+                                    '--resume-model',str(checkpoint),'--obs-mode','p0-smoke'])
+    with pytest.raises(SystemExit,match='p0-smoke cannot resume'):
+        main()
 
 
 def test_masked_inference_smoke_rule_never_updates_optimizer(policy):

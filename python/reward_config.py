@@ -1,4 +1,4 @@
-"""Configuration identity for paired physical-v4 reward ablations."""
+"""Strict Reward V1.0 configuration identity for paired F0/F1 experiments."""
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -17,6 +17,11 @@ class RewardConfiguration:
             raise ValueError('waste reward parameters must be finite and nonnegative')
         object.__setattr__(self,'waste_shortfall_weight',float(self.waste_shortfall_weight))
         object.__setattr__(self,'waste_target_tons',float(self.waste_target_tons))
+        # Imported lazily to keep the contract/config dependency acyclic at import.
+        from .reward_contract import FROZEN_SPEC
+        if asdict(self) != FROZEN_SPEC['configuration']:
+            raise ValueError('Reward V1.0 configuration is frozen: grade_action_enabled=false, '
+                             'waste_shortfall_weight=4, waste_target_tons=4000')
 
     @property
     def variant(self):
@@ -39,9 +44,8 @@ RUNTIME_PREFIX = 'config.'
 def configuration_from_components(components):
     """Read a self-contained RPC configuration; never consult an ALP file.
 
-    v4 math constants must match its known contract. The ablation switch, waste
-    target and waste weight come from AnyLogic. No parameter is inferred from a
-    zero terminal penalty (which would not identify its weight).
+    Every frozen parameter must be present and match. No parameter is inferred
+    from a zero terminal penalty (which would not identify its weight).
     """
     from .reward_contract import FROZEN_REWARD_PARAMETERS
     required = {RUNTIME_PREFIX+k for k in FROZEN_REWARD_PARAMETERS}
@@ -55,11 +59,9 @@ def configuration_from_components(components):
     if flag not in (0,1):
         raise ValueError('grade_action_enabled must be zero or one')
     for key, expected in FROZEN_REWARD_PARAMETERS.items():
-        if key == 'target_waste_tons_shift':
-            continue
         actual = float(components[RUNTIME_PREFIX+key])
         if abs(actual-expected) > 1e-9:
-            raise ValueError(f'unsupported v4 runtime parameter {key}={actual}; expected {expected}')
+            raise ValueError(f'unsupported V1.0 runtime parameter {key}={actual}; expected {expected}')
     return RewardConfiguration(bool(flag),float(components['config.waste_shortfall_weight']),
                                float(components['config.target_waste_tons_shift']))
 

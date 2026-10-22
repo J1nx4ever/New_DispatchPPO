@@ -17,9 +17,8 @@ def runtime_request(cfg, kind=pb.EPISODE_START, seq=0, action=-1, time=0):
     return r
 
 
-@pytest.mark.parametrize('enabled',[True,False])
-def test_runtime_handshake_does_not_consume_first_callback(enabled):
-    cfg=RewardConfiguration(enabled,2.5,2000)
+def test_runtime_handshake_does_not_consume_first_callback():
+    cfg=RewardConfiguration()
     b=DispatchCallbackBridge(runtime_configuration=True)
     assert b.reward_config is None
     r=runtime_request(cfg);ticket=b._register(r)
@@ -34,7 +33,7 @@ def test_runtime_handshake_does_not_consume_first_callback(enabled):
 
 @pytest.mark.parametrize('field',['grade_action_enabled','config.waste_shortfall_weight','config.w_wait'])
 def test_missing_metadata_not_guessed(field):
-    b=DispatchCallbackBridge(runtime_configuration=True);r=runtime_request(RewardConfiguration(True))
+    b=DispatchCallbackBridge(runtime_configuration=True);r=runtime_request(RewardConfiguration())
     del r.reward_components[field]
     with pytest.raises(ProtocolError,match='configuration missing'):b._register(r)
     assert b.reward_config is None
@@ -42,7 +41,7 @@ def test_missing_metadata_not_guessed(field):
 
 
 def test_invalid_start_cannot_lock_configuration():
-    b=DispatchCallbackBridge(runtime_configuration=True);r=runtime_request(RewardConfiguration(True))
+    b=DispatchCallbackBridge(runtime_configuration=True);r=runtime_request(RewardConfiguration())
     r.obs.schema_id='wrong'
     with pytest.raises(ProtocolError):b._register(r)
     assert b.reward_config is None
@@ -56,13 +55,13 @@ def test_parameters_cannot_change_during_run(key,value):
     b=DispatchCallbackBridge(runtime_configuration=True);cfg=RewardConfiguration(False)
     start=b._register(runtime_request(cfg));b.next_callback(timeout=0);b.respond_action(start,0)
     r=runtime_request(cfg,pb.DECISION,1,0,1);r.reward_components[key]=value
-    with pytest.raises(ProtocolError,match='configuration changed'):b._register(r)
+    with pytest.raises(ProtocolError,match='frozen|runtime parameter'):b._register(r)
     b.close()
 
 
 def test_unknown_formula_constant_rejected_not_silently_assumed():
     r=runtime_request(RewardConfiguration(False));r.reward_components['config.w_wait']=5
-    with pytest.raises(ValueError,match='unsupported v4'):configuration_from_components(r.reward_components)
+    with pytest.raises(ValueError,match='unsupported V1.0'):configuration_from_components(r.reward_components)
 
 
 def test_close_releases_rpc_waiting_for_action():
@@ -74,10 +73,9 @@ def test_close_releases_rpc_waiting_for_action():
         with pytest.raises(RuntimeError,match='closed'):future.result(timeout=3)
 
 
-@pytest.mark.parametrize('enabled',[True,False])
-def test_full_training_bootstrap_without_local_alp(monkeypatch,tmp_path,enabled):
+def test_full_training_bootstrap_without_local_alp(monkeypatch,tmp_path):
     from python import train
-    cfg=RewardConfiguration(enabled)
+    cfg=RewardConfiguration()
     seeds=tmp_path/'seeds.json';seeds.write_text(json.dumps([dict(run_index=1,experiment_seed=202610160011)]))
     output=tmp_path/'run'
     monkeypatch.setattr('sys.argv',['train','--episodes','1','--anylogic-seed-manifest',str(seeds),

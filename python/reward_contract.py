@@ -1,39 +1,25 @@
-"""ALP physical-v4 reward and time-window contract shared by training code/tests."""
+"""Frozen Reward V1.0; physical-v4 wire fields remain compatible."""
 
 from __future__ import annotations
 
 from math import isclose, isfinite
 from typing import Any, Mapping
+import json
+from pathlib import Path
 from .reward_config import RewardConfiguration
 
 ADDITIVE_COMPONENTS = ("wait", "grade_action", "grade_2h", "grade_shift", "production", "waste")
 
 
-REWARD_CONTRACT_ID = "dispatch-reward-physical-v4"
-SHIFT_SECONDS = 28_800.0
-WINDOW_SECONDS = 7_200.0
-WINDOWS_PER_EPISODE = 4
+FROZEN_SPEC = json.loads(Path(__file__).with_name("reward_v1_configuration.json").read_text())
+REWARD_CONTRACT_ID = FROZEN_SPEC["reward_contract_id"]
+SHIFT_SECONDS = FROZEN_SPEC["shift_seconds"]
+WINDOW_SECONDS = FROZEN_SPEC["window_seconds"]
+WINDOWS_PER_EPISODE = FROZEN_SPEC["windows_per_episode"]
 
-GRADE_GAP_MIN = -0.01
-GRADE_GAP_MAX = 0.01
-
-FROZEN_REWARD_PARAMETERS: dict[str, float] = {
-    "num_trucks": 9.0,
-    "target_grade": 0.27,
-    "grade_lower": 0.26,
-    "grade_upper": 0.28,
-    "target_waste_tons_shift": 4000.0,
-    "wait_ref_seconds": 200.0,
-    "target_ore_tons_2h": 4_000.0,
-    "target_ore_tons_shift": 16_000.0,
-    "w_wait": 1.0,
-    "w_grade_2h": 1.0,
-    "w_grade_shift": 6.0,
-    "w_production": 4.0,
-    "w_grade_action": 0.15,
-    "grade_prior_tons": 20_000.0,
-    "grade_action_delta_clip": 0.10,
-}
+FROZEN_REWARD_PARAMETERS: dict[str, float] = FROZEN_SPEC["parameters"]
+GRADE_GAP_MIN = FROZEN_REWARD_PARAMETERS["target_grade"] - FROZEN_REWARD_PARAMETERS["grade_upper"]
+GRADE_GAP_MAX = FROZEN_REWARD_PARAMETERS["target_grade"] - FROZEN_REWARD_PARAMETERS["grade_lower"]
 
 
 def grade_reward(grade_gap: float) -> float:
@@ -46,11 +32,11 @@ def grade_reward(grade_gap: float) -> float:
 
 
 def violation_upper(grade_gap: float) -> bool:
-    return grade_gap < GRADE_GAP_MIN
+    return grade_gap < GRADE_GAP_MIN - 1e-12
 
 
 def violation_lower(grade_gap: float) -> bool:
-    return grade_gap > GRADE_GAP_MAX
+    return grade_gap > GRADE_GAP_MAX + 1e-12
 
 
 def window_violated(grade_gap: float) -> bool:
@@ -110,8 +96,8 @@ def validate_window_summary(summary: Mapping[str, Any], *, grade_bounds: bool = 
         raise ValueError("grade disagrees with ore_tons and metal_tons")
     if not isclose(gap, expected_gap, abs_tol=1e-9):
         raise ValueError("grade_gap disagrees with grade")
-    expected_upper = ore_tons > 0.0 and grade > 0.28 + 1e-12
-    expected_lower = ore_tons <= 0.0 or grade < 0.26 - 1e-12
+    expected_upper = ore_tons > 0.0 and grade > FROZEN_REWARD_PARAMETERS["grade_upper"] + 1e-12
+    expected_lower = ore_tons <= 0.0 or grade < FROZEN_REWARD_PARAMETERS["grade_lower"] - 1e-12
     if bool(summary["violation_upper"]) != expected_upper:
         raise ValueError("violation_upper disagrees with grade_gap")
     if bool(summary["violation_lower"]) != expected_lower:
@@ -141,6 +127,8 @@ def validate_reward_accounting(
     if missing:
         raise ValueError(f"reward_components missing frozen fields: {sorted(missing)}")
     action_reward = float(reward_components["grade_action"])
+    if float(reward_components["grade_shift"]) != 0.0:
+        raise ValueError("Reward V1.0 grade_shift must be exactly zero")
     enabled = reward_components.get("grade_action_enabled")
     if enabled not in (0.0, 1.0) or bool(enabled) != config.grade_action_enabled:
         raise ValueError("grade_action_enabled disagrees with reward configuration")

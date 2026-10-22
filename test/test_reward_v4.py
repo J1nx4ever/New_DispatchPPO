@@ -1,3 +1,4 @@
+"""Reward V1.0 regression tests; retains the historic v4 test filename."""
 import csv
 import json
 import hashlib
@@ -28,16 +29,17 @@ def terminal(enabled=False,tons=2000,weight=4,target=4000):
     return r,RewardConfiguration(enabled,weight,target)
 
 
-@pytest.mark.parametrize('enabled',[True,False])
+@pytest.mark.parametrize('enabled',[False])
 def test_start_flag_is_metadata_and_variant_is_enforced(enabled):
     r=request();r.reward_components['grade_action_enabled']=int(enabled)
     config=RewardConfiguration(enabled)
     DispatchCallbackBridge._validate_request(r,config=config)
+    r.reward_components['grade_action_enabled']=1
     with pytest.raises(ProtocolError,match='configuration'):
-        DispatchCallbackBridge._validate_request(r,config=RewardConfiguration(not enabled))
+        DispatchCallbackBridge._validate_request(r,config=config)
 
 
-@pytest.mark.parametrize('tons,weight,target',[(0,4,4000),(2000,4,4000),(4000,4,4000),(6000,4,4000),(2000,0,4000),(2000,2.5,4000),(2000,4,0)])
+@pytest.mark.parametrize('tons,weight,target',[(0,4,4000),(2000,4,4000),(4000,4,4000),(6000,4,4000)])
 def test_terminal_waste_formula(tons,weight,target):
     r,cfg=terminal(tons=tons,weight=weight,target=target)
     DispatchCallbackBridge._validate_request(r,config=cfg)
@@ -48,10 +50,7 @@ def test_disabled_cannot_leak_shaping_and_enabled_negative_bound():
     r,cfg=terminal()
     r.reward_components['grade_action']=.001;r.transition_reward+=.001
     with pytest.raises(ProtocolError,match='exactly zero'): DispatchCallbackBridge._validate_request(r,config=cfg)
-    r,cfg=terminal(enabled=True);r.reward_components['grade_action']=-.015;r.transition_reward-=.015
-    DispatchCallbackBridge._validate_request(r,config=cfg)
-    r.reward_components['grade_action']=-.02;r.transition_reward-=.005
-    with pytest.raises(ProtocolError,match='clipping'): DispatchCallbackBridge._validate_request(r,config=cfg)
+
 
 
 @pytest.mark.parametrize('field,value',[('waste',0),('waste_shortfall',0),('waste_fraction_raw',9),('waste_target_tons',2000),('grade_action_enabled',2)])
@@ -69,42 +68,42 @@ def test_no_v3_or_early_terminal_rewards():
 
 
 def test_flag_cannot_change_after_start():
-    b=DispatchCallbackBridge(reward_config=RewardConfiguration(True));r=request();r.reward_components['grade_action_enabled']=1
+    b=DispatchCallbackBridge(reward_config=RewardConfiguration());r=request()
     t=b._register(r);b.next_callback(timeout=1);b.respond_action(t,0)
-    r=request(pb.DECISION,1,0,1)
+    r=request(pb.DECISION,1,0,1);r.reward_components['grade_action_enabled']=1
     with pytest.raises(ProtocolError,match='configuration'):b._register(r)
 
 
-@pytest.mark.parametrize('enabled',[True,False])
-def test_alp_ablations_from_temporary_copies(enabled,tmp_path):
+@pytest.mark.parametrize('name,code', [('enableGradeActionReward','true'),('wWasteShortfall','2.5')])
+def test_alp_rejects_unfrozen_configuration(name,code,tmp_path):
     from test_alp_experiment import model,override,write_model
-    root,main,exp=model();override(main,exp,'enableGradeActionReward',str(enabled).lower())
-    override(main,exp,'wWasteShortfall','2.5')
-    result=validate_alp_contract(write_model(tmp_path,root))
-    assert result['reward_configuration']==RewardConfiguration(enabled,2.5).to_dict()
-    assert result['ablation_variant']==('grade-action-on' if enabled else 'grade-action-off')
+    root,main,exp=model();override(main,exp,name,code)
+    with pytest.raises(ValueError,match='frozen'):
+        validate_alp_contract(write_model(tmp_path,root))
 
 
-def test_resume_rejects_cross_ablation(tmp_path):
+def test_resume_rejects_wrong_reward_identity(tmp_path):
     checkpoint=tmp_path/'model.zip';checkpoint.write_bytes(b'metadata fixture')
-    cfg=RewardConfiguration(True)
+    cfg=RewardConfiguration()
     metadata=dict(reward_contract_id=REWARD_CONTRACT_ID,policy_contract_id=POLICY_CONTRACT_ID,
                   reward_configuration_fingerprint=cfg.fingerprint,observation_schema_id='dispatch.physical.v3',
                   model_sha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest())
     for name in ['run_manifest.json','SUCCESS.json']:(tmp_path/name).write_text(json.dumps(metadata))
     _validate_resume_contract(checkpoint,cfg)
-    with pytest.raises(SystemExit,match='ablation'):_validate_resume_contract(checkpoint,RewardConfiguration(False))
+    metadata['reward_configuration_fingerprint']='old-config'
+    (tmp_path/'SUCCESS.json').write_text(json.dumps(metadata))
+    with pytest.raises(SystemExit,match='ablation'):_validate_resume_contract(checkpoint,cfg)
 
 
 def test_episode_logs_separate_rewards_physics_and_flags(tmp_path):
-    cfg=RewardConfiguration(True)
+    cfg=RewardConfiguration()
     callback=StageStatisticsCallback(tmp_path,cfg)
     callback.model=SimpleNamespace(num_timesteps=0,logger=configure(str(tmp_path),['csv']))
     # Stage init only needs SB3 episode deques and its logger.
     callback.model.ep_info_buffer=None;callback.model.ep_success_buffer=None;callback.model._stats_window_size=100
     callback._on_training_start()
-    first=request();first.reward_components['grade_action_enabled']=1
-    end,cfg=terminal(enabled=True);end.reward_components['grade_action']=.01;end.transition_reward+=.01
+    first=request()
+    end,cfg=terminal()
     for i,r in enumerate([first,end]):
         callback.model.num_timesteps=i+1
         info=dict(transition_reward_raw=r.transition_reward,reward_components=dict(r.reward_components),
@@ -115,16 +114,16 @@ def test_episode_logs_separate_rewards_physics_and_flags(tmp_path):
     callback._on_training_end()
     row=json.loads((tmp_path/'stage_episodes.jsonl').read_text())
     assert set(row['reward_components'])==set(ADDITIVE_COMPONENTS)
-    assert row['grade_action_enabled'] is True  # not sum(flag)=2
+    assert row['grade_action_enabled'] is False
     assert row['terminal_metrics']['waste_tons_shift']==2000
-    assert row['base_return']==pytest.approx(row['raw_return']-.01)
+    assert row['base_return']==pytest.approx(row['raw_return'])
     assert len(row['closed_windows'])==4 and row['window_violation_rate']==0
     with (tmp_path/'episodes.csv').open() as f:csv_rows=list(csv.DictReader(f))
     assert len(csv_rows)==1 and csv_rows[0]['waste']=='-2.0'
     assert not (tmp_path/'transitions.jsonl').exists()
 
 
-@pytest.mark.parametrize('enabled,expected',[(False,'on'),(True,'off')])
+@pytest.mark.parametrize('enabled,expected',[(False,'on')])
 def test_cli_expectation_checks_runtime_switch(enabled,expected):
     from python.train import _validate_expected_variant
     with pytest.raises(SystemExit,match='runtime configuration'):
@@ -140,14 +139,14 @@ def test_manifest_does_not_read_alp_by_default(monkeypatch,tmp_path):
     def forbidden(*args):raise AssertionError('must not audit a local ALP by default')
     monkeypatch.setattr(train,'validate_alp_contract',forbidden)
     args=train.parse_args()
-    manifest=train._manifest(args,tmp_path/'not-created',RewardConfiguration(True))
+    manifest=train._manifest(args,tmp_path/'not-created',RewardConfiguration())
     assert manifest['alp_path'] is None and manifest['alp_sha256'] is None
     assert manifest['configuration_source']=='anylogic_rpc'
-    assert manifest['ablation_variant']=='grade-action-on'
+    assert manifest['ablation_variant']=='grade-action-off'
 
 
 def test_waste_action_has_no_grade_shaping_even_when_enabled():
-    r,cfg=terminal(enabled=True);r.previous_action=3
+    r,cfg=terminal();r.previous_action=3
     DispatchCallbackBridge._validate_request(r,config=cfg)
     r.reward_components['grade_action']=.001;r.transition_reward+=.001
     with pytest.raises(ProtocolError,match='WASTE action'):

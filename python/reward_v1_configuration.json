@@ -1,0 +1,53 @@
+{
+  "reward_contract_id": "dispatch-reward-v1.0",
+  "shift_seconds": 28800.0,
+  "window_seconds": 7200.0,
+  "windows_per_episode": 4,
+  "parameters": {
+    "num_trucks": 9.0,
+    "target_grade": 0.27,
+    "grade_lower": 0.26,
+    "grade_upper": 0.28,
+    "target_waste_tons_shift": 4000.0,
+    "wait_ref_seconds": 200.0,
+    "target_ore_tons_2h": 4000.0,
+    "target_ore_tons_shift": 16000.0,
+    "w_wait": 1.0,
+    "w_grade_2h": 1.0,
+    "w_grade_shift": 0.0,
+    "w_production": 4.0,
+    "w_grade_action": 0.0,
+    "grade_prior_tons": 20000.0,
+    "grade_action_delta_clip": 0.1
+  },
+  "configuration": {
+    "grade_action_enabled": false,
+    "waste_shortfall_weight": 4.0,
+    "waste_target_tons": 4000.0
+  },
+  "experiment": {
+    "observation_schema_id": "dispatch.physical.v3",
+    "raw_observation_dimension": 1519,
+    "shift_minutes": 480,
+    "window_minutes": 120,
+    "crusher_rate_tph": 2500.0,
+    "crusher_buffer_tons": 500.0,
+    "ore_dump_capacity": 3,
+    "waste_dump_capacity": 2,
+    "use_endogenous_congestion": true,
+    "speed_tick_seconds": 0.2,
+    "training_deterministic_check": false,
+    "ppo_defaults": {
+      "learning_rate": 0.0003,
+      "n_steps": 128,
+      "batch_size": 32,
+      "n_epochs": 10,
+      "gamma": 0.995,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "net_arch": {"pi": [128, 128], "vf": [128, 128]}
+    }
+  },
+  "source": "V4 audited physical parameters; V1.0 disables grade_action and grade_shift, retaining independent ore/waste terminal shortfalls. Episode budgets and paired seeds are recorded per run."
+}

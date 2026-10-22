@@ -73,10 +73,37 @@ def observation_source_digest(root):
     return hashlib.sha256(json.dumps(bodies,ensure_ascii=False).encode()).hexdigest()
 
 
+def validate_alp_sources(root):
+    """Validate reviewed function bodies, independently of reward parameters.
+
+    This does not certify Reward V1.0 readiness; validate_alp_contract also checks
+    the active experiment's parameters. Old provenance files are preserved.
+    """
+    evidence=json.loads(Path(__file__).with_name('alp_contract_provenance.json').read_text())
+    reviewed=json.loads(Path(__file__).with_name('reward_v4_provenance.json').read_text())['reviewed_functions']
+    current=json.loads(Path(__file__).with_name('reward_v1_provenance.json').read_text())['reviewed_functions']
+    reviewed={**reviewed, **current}
+    if observation_source_digest(root)!=evidence['observation_source_sha256']:
+        raise ValueError('observation functions changed; re-extract and re-audit schema')
+    actual={}
+    for c in root.iter('ActiveObjectClass'):
+        if not c.findtext('Name'): continue
+        for f in c.findall('./Functions/Function'):
+            key=c.findtext('Name')+'.'+f.findtext('Name')
+            actual[key]=hashlib.sha256((f.findtext('Body') or '').encode()).hexdigest()
+    expected=dict(evidence['unchanged_function_body_sha256'])
+    expected.update({key: value['sha256'] for key,value in reviewed.items()})
+    for key in sorted(set(expected) | set(actual)):
+        if actual.get(key) != expected.get(key):
+            raise ValueError(f'ALP business function changed: {key}; re-audit required')
+    return {'reviewed_function_count': len(actual), 'observation_source_sha256': observation_source_digest(root)}
+
+
 def validate_alp_contract(path=None):
     path=Path(path) if path else Path(__file__).resolve().parents[1]/OBSERVATION_ALP_PATH
     root,main,_default_value=load_alp(path)
     exp=next(e for e in root.iter('ParamVariationExperiment') if e.findtext('Name')=='RL_Training')
+    source_audit = validate_alp_sources(root)
     def value(name):
         return experiment_value(main, exp, name)
     for alp,key in PARAMETERS.items():
@@ -95,17 +122,6 @@ def validate_alp_contract(path=None):
     if root.findtext('./Model/ModelTimeUnit')!='Second': raise ValueError('re-audit experiment time units')
     if float(exp.findtext('./ModelTimeProperties/FinalTime'))<28800:
         raise ValueError('experiment stops before terminal callback')
-    evidence=json.loads(Path(__file__).with_name('alp_contract_provenance.json').read_text())
-    reviewed=json.loads(Path(__file__).with_name('reward_v4_provenance.json').read_text())['reviewed_functions']
-    if observation_source_digest(root)!=evidence['observation_source_sha256']:
-        raise ValueError('observation functions changed; re-extract and re-audit schema')
-    for c in root.iter('ActiveObjectClass'):
-        if not c.findtext('Name'): continue
-        for f in c.findall('./Functions/Function'):
-            key=c.findtext('Name')+'.'+f.findtext('Name')
-            digest=hashlib.sha256((f.findtext('Body') or '').encode()).hexdigest()
-            if reviewed.get(key,{}).get('sha256',evidence['unchanged_function_body_sha256'].get(key))!=digest:
-                raise ValueError(f'ALP business function changed: {key}; re-audit required')
     deterministic = value('deterministicCheck')
     if deterministic not in ('true', 'false'):
         raise ValueError(f'RL_Training deterministicCheck must be true or false, got {deterministic!r}')
@@ -118,7 +134,7 @@ def validate_alp_contract(path=None):
     return dict(experiment_runs=runs, reward_configuration=config.to_dict(), reward_configuration_fingerprint=config.fingerprint,
                 ablation_variant=config.variant, observation_schema='dispatch.physical.v3',dimension=1519,
                 reward_contract=REWARD_CONTRACT_ID,alp_runtime_verified=False,
-                use_physical_observation=True, deterministic_check=deterministic == 'true')
+                use_physical_observation=True, deterministic_check=deterministic == 'true', source_audit=source_audit)
 
 
 def main():

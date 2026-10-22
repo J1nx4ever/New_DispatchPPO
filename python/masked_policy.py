@@ -11,7 +11,9 @@ from gymnasium import spaces
 from stable_baselines3.common.distributions import CategoricalDistribution
 from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy
 
-from .observation_contract import ACTION_MASK_SLICE, OBSERVATION_SIZE
+from .observation_contract import (
+    ACTION_MASK_SLICE, AGENT_OBSERVATION_SIZE, OBSERVATION_SIZE,
+)
 
 POLICY_CONTRACT_ID = 'dispatch-masked-categorical-v1'
 
@@ -20,8 +22,11 @@ class DispatchMaskedPolicy(ActorCriticPolicy):
     def __init__(self, observation_space, action_space, lr_schedule, **kwargs):
         if stable_baselines3.__version__ != '2.9.0':
             raise RuntimeError('DispatchMaskedPolicy requires audited SB3 2.9.0')
-        if not isinstance(observation_space, spaces.Box) or observation_space.shape != (OBSERVATION_SIZE,):
-            raise ValueError('DispatchMaskedPolicy requires the 1519D physical observation')
+        if not isinstance(observation_space, spaces.Box) or observation_space.shape not in (
+                (OBSERVATION_SIZE,), (AGENT_OBSERVATION_SIZE,)):
+            raise ValueError(
+                'DispatchMaskedPolicy requires the 1519D physical observation '
+                'or the 1525D augmented observation')
         if not isinstance(action_space, spaces.Discrete) or action_space.n != 4 or action_space.start != 0:
             raise ValueError('DispatchMaskedPolicy requires Discrete(4), starting at zero')
         super().__init__(observation_space, action_space, lr_schedule, **kwargs)
@@ -30,8 +35,11 @@ class DispatchMaskedPolicy(ActorCriticPolicy):
 
     @staticmethod
     def _decision_mask(obs):
-        if obs.ndim != 2 or obs.shape[1] != OBSERVATION_SIZE:
-            raise ValueError('expected batched 1519D observations')
+        if obs.ndim != 2 or obs.shape[1] not in (OBSERVATION_SIZE, AGENT_OBSERVATION_SIZE):
+            raise ValueError('expected batched 1519D or 1525D observations')
+        # Agent-only tail: never trust it to carry mask or terminal state.
+        if obs.shape[1] == AGENT_OBSERVATION_SIZE and not th.isfinite(obs).all():
+            raise ValueError('augmented observations must be finite')
         mask = obs[:, ACTION_MASK_SLICE]
         if not th.all((mask == 0) | (mask == 1)):
             raise ValueError('action mask must contain exactly zero or one')

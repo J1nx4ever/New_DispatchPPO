@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import pytest
 from python.alp_audit import experiment_value, load_alp, validate_alp_contract
+from python.reward_contract import REWARD_CONTRACT_ID
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -11,6 +12,11 @@ def model():
     root, main, _ = load_alp(ROOT / 'anylogic/DRL-PPO.alp')
     experiment = next(e for e in root.iter('ParamVariationExperiment')
                       if e.findtext('Name') == 'RL_Training')
+    # Exercise the documented migration in memory; never mutate the user's ALP.
+    for name,code in {'wGradeShift':'0', 'wGradeAction':'0.0',
+                      'rewardContractId':f'"{REWARD_CONTRACT_ID}"'}.items():
+        variable = next(v for v in main.findall('./Variables/Variable') if v.findtext('Name') == name)
+        variable.find('./Properties/InitialValue/Code').text = code
     return root, main, experiment
 
 
